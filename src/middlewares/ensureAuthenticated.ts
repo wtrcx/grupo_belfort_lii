@@ -1,7 +1,8 @@
+import BadRequest from '@errors/badRequest';
+import ServerError from '@errors/serverError';
+import Unauthorized from '@errors/unauthorizedError';
 import { Request, Response, NextFunction } from 'express';
 import { verify } from 'jsonwebtoken';
-
-import authConfig from '../config/auth';
 
 interface TokenPayload {
   iat: number;
@@ -14,17 +15,27 @@ interface Subject {
   roles: string[];
 }
 
-const { secret } = authConfig.jwt;
+const secret = process.env.JWT_SECRET;
 
-const ensureAuthenticated = (checkProfiles?: string[]) => (
+if (!secret) {
+  throw new ServerError('Error in environment variables');
+}
+
+const ensureAuthenticated = (checkRoles?: string[]) => (
   request: Request,
   response: Response,
   next: NextFunction,
 ): void => {
+  const administrator = process.env.APP_ADMINISTRATOR;
+
+  if (!administrator) {
+    throw new ServerError('Internal server error');
+  }
+
   const authHeader = request.headers.authorization;
 
   if (!authHeader) {
-    throw new Error('JWT token is misssing');
+    throw new BadRequest('JWT token is misssing');
   }
 
   const [, token] = authHeader.split(' ');
@@ -36,9 +47,9 @@ const ensureAuthenticated = (checkProfiles?: string[]) => (
 
     const { id, roles } = JSON.parse(sub) as Subject;
 
-    if (checkProfiles) {
-      if (!checkProfiles.some(checkProfile => roles.includes(checkProfile))) {
-        throw new Error('Not Authorized');
+    if (checkRoles) {
+      if (!checkRoles.some(checkProfile => roles.includes(checkProfile))) {
+        throw new Unauthorized('Not Authorized');
       }
     }
 
@@ -49,7 +60,7 @@ const ensureAuthenticated = (checkProfiles?: string[]) => (
 
     return next();
   } catch (error) {
-    throw new Error(error);
+    throw new ServerError(error);
   }
 };
 

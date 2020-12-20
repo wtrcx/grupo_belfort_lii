@@ -24,10 +24,6 @@ export default class CreateUserTable1605377680845
             isNullable: true,
           },
           {
-            name: 'cell_phone',
-            type: 'varchar',
-          },
-          {
             name: 'password',
             type: 'varchar',
           },

@@ -1,11 +1,11 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export default class CreateProfileTable1605377960898
+export default class CreateCollaboratorsTable1608413773242
   implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'profiles',
+        name: 'collaborators',
         columns: [
           {
             name: 'id',
@@ -15,17 +15,34 @@ export default class CreateProfileTable1605377960898
             default: 'uuid_generate_v4()',
           },
           {
+            name: 'company',
+            type: 'integer',
+          },
+          {
+            name: 're',
+            type: 'integer',
+          },
+          {
             name: 'name',
             type: 'varchar',
-            isUnique: true,
           },
           {
-            name: 'alias',
+            name: 'cell_phone',
             type: 'varchar',
           },
           {
-            name: 'description',
+            name: 'email',
             type: 'varchar',
+            isNullable: true,
+          },
+          {
+            name: 'security_code',
+            type: 'varchar',
+          },
+          {
+            name: 'is_enable',
+            type: 'boolean',
+            default: true,
           },
           {
             name: 'created_at',
@@ -40,22 +57,9 @@ export default class CreateProfileTable1605377960898
         ],
       }),
     );
-
-    await queryRunner.query(
-      'INSERT INTO profiles (name, alias, description) ' +
-        "VALUES('administrator','Administrador', 'Perfil com todos os acessos.')",
-    );
-    await queryRunner.query(
-      'INSERT INTO profiles (name, alias, description) ' +
-        "VALUES('access','Acesso', 'Grupo com as funções para gerenciar os acessos.')",
-    );
-    await queryRunner.query(
-      'INSERT INTO profiles (name, alias, description) ' +
-        "VALUES('whatsapp','WhatsApp', 'Grupo com as funções para gerenciar os acessos.')",
-    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('profiles');
+    await queryRunner.dropTable('collaborators');
   }
 }

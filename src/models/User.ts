@@ -8,7 +8,7 @@ import {
   JoinTable,
 } from 'typeorm';
 
-import Profile from './Profile';
+import Role from './Role';
 
 @Entity('users')
 class User {
@@ -22,27 +22,24 @@ class User {
   email: string;
 
   @Column()
-  cell_phone: string;
-
-  @Column()
   password: string;
 
   @Column()
   is_enable: boolean;
 
-  @ManyToMany(() => Profile)
+  @ManyToMany(() => Role)
   @JoinTable({
-    name: 'user_profile',
+    name: 'user_role',
     joinColumn: {
       name: 'user_id',
       referencedColumnName: 'id',
     },
     inverseJoinColumn: {
-      name: 'profile_id',
+      name: 'role_id',
       referencedColumnName: 'id',
     },
   })
-  profile: Profile[];
+  roles: Role[];
 
   @CreateDateColumn()
   created_at: Date;

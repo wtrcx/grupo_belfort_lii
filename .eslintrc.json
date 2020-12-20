@@ -20,6 +20,7 @@
   ],
   "rules": {
     "prettier/prettier":"error",
+    "no-unused-vars":["error",{"argsIgnorePattern":"_"}],
     "camelcase":"off",
     "class-methods-use-this":"off",
     "import/extensions":[
@@ -36,10 +37,10 @@
       "alias":[
           ["@src","./src"],
           ["@services","./src/services"],
-          ["@routes","./src/routes"],
           ["@repositories","./src/repositories"],
           ["@models","./src/models"],
-          ["@dtos","./src/"]
+          ["@dtos","./src/dtos"],
+          ["@errors","./src/errors"]
         ]
       }
     }

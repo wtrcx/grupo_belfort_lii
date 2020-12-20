@@ -5,22 +5,41 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export default class CreateUserProfileTable1605378566015
+export default class CreateClientsTable1608347961129
   implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'user_profile',
+        name: 'clients',
         columns: [
           {
-            name: 'user_id',
+            name: 'id',
+            type: 'uuid',
             isPrimary: true,
+            generationStrategy: 'uuid',
+            default: 'uuid_generate_v4()',
+          },
+          {
+            name: 'service',
+            type: 'varchar',
+          },
+          {
+            name: 'script',
+            type: 'varchar',
+          },
+          {
+            name: 'access',
+            type: 'varchar',
+            isNullable: true,
+          },
+          {
+            name: 'user_id',
             type: 'uuid',
           },
           {
-            name: 'profile_id',
-            isPrimary: true,
-            type: 'uuid',
+            name: 'is_enable',
+            type: 'boolean',
+            default: true,
           },
           {
             name: 'created_at',
@@ -35,10 +54,11 @@ export default class CreateUserProfileTable1605378566015
         ],
       }),
     );
+
     await queryRunner.createForeignKey(
-      'user_profile',
+      'clients',
       new TableForeignKey({
-        name: 'user_id',
+        name: 'user_client',
         columnNames: ['user_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'users',
@@ -46,22 +66,10 @@ export default class CreateUserProfileTable1605378566015
         onUpdate: 'CASCADE',
       }),
     );
-    await queryRunner.createForeignKey(
-      'user_profile',
-      new TableForeignKey({
-        name: 'profile_id',
-        columnNames: ['profile_id'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'profiles',
-        onDelete: 'RESTRICT',
-        onUpdate: 'CASCADE',
-      }),
-    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropForeignKey('user_profile', 'profile_id');
-    await queryRunner.dropForeignKey('user_profile', 'user_id');
-    await queryRunner.dropTable('user_profile');
+    await queryRunner.dropForeignKey('clients', 'user_client');
+    await queryRunner.dropTable('clients');
   }
 }

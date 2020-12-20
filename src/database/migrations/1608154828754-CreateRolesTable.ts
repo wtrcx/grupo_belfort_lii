@@ -52,7 +52,7 @@ export default class CreateRolesTable1608154828754
     await queryRunner.createForeignKey(
       'roles',
       new TableForeignKey({
-        name: 'profile_id',
+        name: 'profile_role',
         columnNames: ['profile_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'profiles',
@@ -70,30 +70,30 @@ export default class CreateRolesTable1608154828754
     await queryRunner.query(
       'INSERT INTO roles (name, alias, description, profile_id) ' +
         "VALUES('profile_consult','Consultar Perfil', 'Consultar todos os perfis.'," +
-        "(SELECT id FROM profiles WHERE name='profile'))",
+        "(SELECT id FROM profiles WHERE name='access'))",
     );
 
     await queryRunner.query(
       'INSERT INTO roles (name, alias, description, profile_id) ' +
-        "VALUES('profile_create','Criar Perfil', 'Criar os perfis de acesso.'," +
-        "(SELECT id FROM profiles WHERE name='profile'))",
+        "VALUES('access_consult','Consultar Acessos', 'Consultar todos os usuários cadastrados.'," +
+        "(SELECT id FROM profiles WHERE name='access'))",
     );
 
     await queryRunner.query(
       'INSERT INTO roles (name, alias, description, profile_id) ' +
-        "VALUES('profile_change','Alterar Perfil', 'Alterar os perfis de acesso.'," +
-        "(SELECT id FROM profiles WHERE name='profile'))",
+        "VALUES('access_create','Criar Usuários', 'Criar novos usuários na aplicação.'," +
+        "(SELECT id FROM profiles WHERE name='access'))",
     );
 
     await queryRunner.query(
       'INSERT INTO roles (name, alias, description, profile_id) ' +
-        "VALUES('profile_delete','Deletar Perfil', 'Deletar os perfis de acesso.'," +
-        "(SELECT id FROM profiles WHERE name='profile'))",
+        "VALUES('whatsapp_create','Novo Whatsapp', 'Criar novas conexões com o Whatsapp.'," +
+        "(SELECT id FROM profiles WHERE name='whatsapp'))",
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropForeignKey('roles', 'profile_id');
+    await queryRunner.dropForeignKey('roles', 'profile_role');
     await queryRunner.dropTable('roles');
   }
 }

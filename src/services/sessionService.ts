@@ -3,11 +3,10 @@ import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 import LoginDTO from '@dtos/loginDto';
 import UserRepository from '@repositories/userRepository';
-import Role from '@models/Role';
-import authConfig from '../config/auth';
-import ProfileService from './profileService';
+import Unauthorized from '@errors/unauthorizedError';
+import ServerError from '@errors/serverError';
 
-interface LoginSuccess {
+interface SessionCreate {
   name: string;
   email: string;
   token: string;
@@ -15,45 +14,43 @@ interface LoginSuccess {
 
 interface TokenPayload {
   id: string;
-  roles: string[]; // string[];
+  roles: string[];
 }
 
 class SessionService {
-  public async execute({ email, password }: LoginDTO): Promise<LoginSuccess> {
+  public async execute({ email, password }: LoginDTO): Promise<SessionCreate> {
     const userRepository: UserRepository = getCustomRepository(UserRepository);
 
-    const profileService = new ProfileService();
-
     const user = await userRepository.findOne({
-      relations: ['profile'],
+      relations: ['roles'],
       where: { email },
     });
 
     if (!user) {
-      throw new Error('Invalid email or password');
+      throw new Unauthorized('Invalid email or password');
     }
 
     const passwordMatched = await compare(password, user.password);
 
     if (!passwordMatched) {
-      throw new Error('Invalid email or password');
+      throw new Unauthorized('Invalid email or password');
     }
 
-    const { secret, expiresIn } = authConfig.jwt;
+    const secret = process.env.JWT_SECRET;
+    const expiresIn = process.env.JWT_EXPIRESIN;
 
-    const roles = await profileService.getRolesByProfiles(user.profile);
+    if (!secret || !expiresIn) {
+      throw new ServerError('Internal server error');
+    }
 
-    const rolesName = Array.from(roles).map(role => role.name);
+    const roles = user.roles.map(role => role.name);
 
-    const tokenPayload: TokenPayload = { id: user.id, roles: rolesName };
+    const tokenPayload: TokenPayload = { id: user.id, roles };
 
     const token = sign({}, secret, {
       subject: JSON.stringify(tokenPayload),
       expiresIn,
     });
-
-    delete user.password;
-    delete user.profile;
 
     return {
       name: user.name,
