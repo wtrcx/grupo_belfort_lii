@@ -1,4 +1,4 @@
-import { ReturnScript } from '../interfaces';
+import { ReturnScript } from '../../interfaces';
 
 const address = async (message: string): Promise<ReturnScript> => {
   const regex = new RegExp('^[a-zA-Z0-9]{1,10}$');

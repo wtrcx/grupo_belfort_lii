@@ -1,4 +1,4 @@
-import { ReturnScript } from '../interfaces/index';
+import { ReturnScript } from '../../interfaces';
 
 const documentConfirmation = async (
   docConfirmation: string,

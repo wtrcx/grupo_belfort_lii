@@ -1,4 +1,4 @@
-import { ReturnScript } from '../interfaces';
+import { ReturnScript } from '../../interfaces';
 
 const complement = async (message: string): Promise<ReturnScript> => {
   return {

@@ -1,6 +1,7 @@
 export interface ReturnScript {
   status?: boolean;
-  message?: string | string[];
+  error?: boolean;
+  message: string | string[];
   data?: any;
   start?: boolean;
   finish?: boolean;

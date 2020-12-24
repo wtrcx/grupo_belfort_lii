@@ -1,7 +1,12 @@
-import Conversations from '../../models/Conversations';
-import ConversationsService from '../../services/ConversationService';
-import HistoricService from '../../services/HistoricService';
-import { ReturnScript } from '../interfaces';
+import ViaCepCache from '@cache/viaCepCache';
+import ViaCepDTO from '@dtos/viaCepDto';
+import ServerError from '@errors/serverError';
+import Client from '@models/Client';
+import Conversations from '@models/Conversations';
+import ConversationsService from '@services/conversationService';
+import HistoricService from '@services/historicService';
+
+import { ReturnScript } from '../../interfaces';
 
 // Script: Customer Indication
 import name from './01.name';
@@ -16,20 +21,31 @@ class CustomerIndication {
 
   private readonly historicService: HistoricService = new HistoricService();
 
+  private readonly client: Client;
+
   private readonly from: string;
 
   private readonly message: string;
 
-  private readonly source: string;
+  private readonly service: string;
 
-  constructor(from: string, message: string, source: string) {
+  constructor(client: Client, from: string, message: string, service: string) {
+    this.client = client;
     this.from = from;
     this.message = message;
-    this.source = source;
+    this.service = service;
   }
 
   public async chat(conversation: Conversations): Promise<ReturnScript> {
-    const history = await this.historicService.sequenceStatus(conversation.id);
+    if (this.message.toLowerCase() === 'sair') {
+      conversation.name = 'customer_indication_closed';
+      await this.conversationsService.update(conversation);
+      return {
+        message: 'Posso lhe ajudar com algo mais?\n\n*1.* Sim\n*2.* Não',
+        finish: true,
+      };
+    }
+    const history = await this.historicService.sequenceStatus(conversation);
 
     if (history) {
       switch (history.sequence) {
@@ -41,7 +57,7 @@ class CustomerIndication {
             await this.historicService.update(history);
 
             await this.historicService.execute(
-              conversation.id,
+              conversation,
               2,
               'email',
               'option',
@@ -72,7 +88,7 @@ class CustomerIndication {
                 history.response = 'not opting';
                 await this.historicService.update(history);
                 await this.historicService.execute(
-                  conversation.id,
+                  conversation,
                   3,
                   'phone',
                   '',
@@ -83,7 +99,7 @@ class CustomerIndication {
                     'É necessário que nós informe o *DDD* (Ex: 11) e o telefone ' +
                       'deve ser composto apenas os numeros.\n\n' +
                       'Exemplo: *Celular:* 11988887777 ou *Fixo:* 1188887777',
-                    '➡️ Nos informe o *telefone do cliente*:',
+                    '➡️ Nos informe agora o *telefone do cliente*:',
                   ],
                 };
               default:
@@ -110,13 +126,13 @@ class CustomerIndication {
 
             if (history.response === '2') {
               await this.historicService.execute(
-                conversation.id,
+                conversation,
                 3,
                 'phone',
                 'not opting',
               );
 
-              await this.historicService.execute(conversation.id, 4, 'cep', '');
+              await this.historicService.execute(conversation, 4, 'cep', '');
             } else {
               emailScript.message = [
                 '📞 Vamos cadastrar agora o telefone do cliente',
@@ -125,12 +141,7 @@ class CustomerIndication {
                   'Exemplo: *Celular:* 11988887777 ou *Fixo:* 1188887777',
                 '➡️ Nos informe o *telefone do cliente*:',
               ];
-              await this.historicService.execute(
-                conversation.id,
-                3,
-                'phone',
-                '',
-              );
+              await this.historicService.execute(conversation, 3, 'phone', '');
             }
 
             history.response = this.message.toLowerCase();
@@ -146,50 +157,53 @@ class CustomerIndication {
           if (phoneScript.status) {
             history.response = this.message;
             await this.historicService.update(history);
-            await this.historicService.execute(conversation.id, 4, 'cep', '');
+            await this.historicService.execute(conversation, 4, 'cep', '');
 
             return { message: phoneScript.message };
           }
 
           return { message: phoneScript.message, end: phoneScript.end };
         case 4:
-          const [validCEP, ...addressValid] = history.response.split('@');
+          const [validCEP, cep] = history.response.split('@');
 
           if (validCEP === 'OK') {
             switch (this.message) {
               case '1':
-                [history.response] = addressValid;
+                const { logradouro, bairro, localidade, uf } = ViaCepCache.get(
+                  cep,
+                ) as ViaCepDTO;
+
+                if (!logradouro || !bairro || !localidade || !uf) {
+                  throw new ServerError('Internal server error');
+                }
+
+                history.response = cep;
                 await this.historicService.update(history);
 
                 await this.historicService.execute(
-                  conversation.id,
+                  conversation,
                   4,
                   'logradouro',
-                  addressValid[1],
+                  logradouro,
                 );
                 await this.historicService.execute(
-                  conversation.id,
+                  conversation,
                   4,
                   'bairro',
-                  addressValid[2],
+                  bairro,
                 );
 
                 await this.historicService.execute(
-                  conversation.id,
+                  conversation,
                   4,
                   'localidade',
-                  addressValid[3],
+                  localidade,
                 );
 
-                await this.historicService.execute(
-                  conversation.id,
-                  4,
-                  'uf',
-                  addressValid[4],
-                );
+                await this.historicService.execute(conversation, 4, 'uf', uf);
 
                 await this.historicService.execute(
-                  conversation.id,
+                  conversation,
                   5,
                   'numero',
                   '',
@@ -212,8 +226,7 @@ class CustomerIndication {
               default:
                 return {
                   message:
-                    '😷 Estamos passando por dificuldades técnicas, ' +
-                    'peço que retorne o contato mais tarde',
+                    '*👨‍🔧 Estamos passando por uma manutenção.* Tente novamente mais tarde!',
                   end: true,
                 };
             }
@@ -222,15 +235,7 @@ class CustomerIndication {
           const addressScript = await address(this.message);
 
           if (addressScript.status) {
-            const {
-              cep,
-              logradouro,
-              bairro,
-              localidade,
-              uf,
-            } = addressScript.data;
-
-            history.response = `OK@${cep}@${logradouro}@${bairro}@${localidade}@${uf}`;
+            history.response = `OK@${this.message}`;
             await this.historicService.update(history);
           }
           return { message: addressScript.message };
@@ -243,7 +248,7 @@ class CustomerIndication {
             await this.historicService.update(history);
 
             await this.historicService.execute(
-              conversation.id,
+              conversation,
               6,
               'complemento',
               '',
@@ -273,16 +278,14 @@ class CustomerIndication {
         default:
           return {
             message:
-              '😷 Estamos passando por dificuldades técnicas, ' +
-              'peço que retorne o contato mais tarde',
+              '*👨‍🔧 Estamos passando por uma manutenção.* Tente novamente mais tarde!',
             end: true,
           };
       }
     }
     return {
       message:
-        '😷 Estamos passando por dificuldades técnicas, ' +
-        'peço que retorne o contato mais tarde',
+        '*👨‍🔧 Estamos passando por uma manutenção.* Tente novamente mais tarde!',
       end: true,
     };
   }

@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 
 @Entity('collaborators')
-export default class Collaborator {
+class Collaborator {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -29,12 +29,11 @@ export default class Collaborator {
   @Column()
   is_enable: boolean;
 
-  @Column()
-  security_code: string;
-
   @CreateDateColumn()
   created_at: Date;
 
   @UpdateDateColumn()
   updated_at: Date;
 }
+
+export default Collaborator;

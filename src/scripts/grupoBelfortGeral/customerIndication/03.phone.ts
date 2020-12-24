@@ -1,4 +1,4 @@
-import { ReturnScript } from '../interfaces';
+import { ReturnScript } from '../../interfaces';
 
 const phone = async (message: string): Promise<ReturnScript> => {
   const regex = new RegExp('^[0-9]{10,11}$');

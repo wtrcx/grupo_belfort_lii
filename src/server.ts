@@ -1,6 +1,8 @@
 import './config/moduleAliases';
 import 'reflect-metadata';
+
 import './database';
+import './cache';
 
 import express from 'express';
 import 'express-async-errors';

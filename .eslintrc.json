@@ -20,6 +20,8 @@
   ],
   "rules": {
     "prettier/prettier":"error",
+    "no-case-declarations":"off",
+    "no-param-reassign":"off",
     "no-unused-vars":["error",{"argsIgnorePattern":"_"}],
     "camelcase":"off",
     "class-methods-use-this":"off",
@@ -40,7 +42,8 @@
           ["@repositories","./src/repositories"],
           ["@models","./src/models"],
           ["@dtos","./src/dtos"],
-          ["@errors","./src/errors"]
+          ["@errors","./src/errors"],
+          ["@cache","./src/cache"]
         ]
       }
     }

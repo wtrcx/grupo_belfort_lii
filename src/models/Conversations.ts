@@ -12,12 +12,9 @@ import Client from './Client';
 import Collaborators from './Collaborators';
 
 @Entity('conversations')
-export default class Conversation {
+class Conversation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column()
-  collaborator_id: string;
 
   @ManyToOne(() => Client)
   @JoinColumn({ name: 'client_id' })
@@ -34,7 +31,7 @@ export default class Conversation {
   name: string;
 
   @Column()
-  status: string;
+  close: boolean;
 
   @CreateDateColumn()
   created_at: Date;
@@ -42,3 +39,5 @@ export default class Conversation {
   @UpdateDateColumn()
   updated_at: Date;
 }
+
+export default Conversation;

@@ -38,8 +38,8 @@ export default class CreateConversationsTable1608415847016
             isNullable: true,
           },
           {
-            name: 'status',
-            type: 'varchar',
+            name: 'close',
+            type: 'boolean',
           },
           {
             name: 'created_at',

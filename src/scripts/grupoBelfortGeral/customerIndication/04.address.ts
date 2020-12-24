@@ -1,5 +1,6 @@
-import ViaCepService from '../../services/ViaCepService';
-import { ReturnScript } from '../interfaces';
+import ViaCepCache from '@cache/viaCepCache';
+import ViaCepService from '@services/viaCepService';
+import { ReturnScript } from '../../interfaces';
 
 const address = async (message: string): Promise<ReturnScript> => {
   const regex = new RegExp('^[0-9]{8}$');
@@ -9,6 +10,7 @@ const address = async (message: string): Promise<ReturnScript> => {
     const addressByCep = await viaCepService.consulta();
 
     if (addressByCep.status === 200) {
+      ViaCepCache.set(message, addressByCep);
       return {
         status: true,
         message:
@@ -20,7 +22,6 @@ const address = async (message: string): Promise<ReturnScript> => {
           'O endereço está correto?\n\n' +
           '*1.* Sim\n' +
           '*2.* Não',
-        data: addressByCep,
       };
     }
     return {

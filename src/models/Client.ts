@@ -10,7 +10,7 @@ import {
 import User from './User';
 
 @Entity('clients')
-class WhatsAppClient {
+class Client {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -37,4 +37,4 @@ class WhatsAppClient {
   updated_at: Date;
 }
 
-export default WhatsAppClient;
+export default Client;

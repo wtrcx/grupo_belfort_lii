@@ -1,12 +1,15 @@
-import BelfortService from '../../services/BelfortService';
-import { ReturnScript } from '../interfaces/index';
+import Conversation from '@models/Conversations';
+import SarService from '@services/sarService';
+import CollaboratorCache from '../../../cache/collaboratorCache';
+import { ReturnScript } from '../../interfaces';
 
 const re = async (
+  conversation: Conversation,
   message: string,
   companyId: number,
-  cell_phone?: string,
+  from?: string,
 ): Promise<ReturnScript> => {
-  const belfortService = new BelfortService();
+  const sarService = new SarService();
   const regex = new RegExp('^[0-9]{3,5}$');
 
   if (!regex.test(message)) {
@@ -31,13 +34,23 @@ const re = async (
     };
   }
 
-  const collaborator = await belfortService.findCollaboratorByReAndCompany(
+  const collaborator = await sarService.findCollaboratorByReAndCompany(
     reNumber,
     companyId,
   );
 
   if (collaborator) {
-    if (cell_phone && collaborator.phone !== cell_phone) {
+    if (!collaborator.status) {
+      return {
+        status: false,
+        message:
+          `🚫 O seu cadastro encontra-se bloqueado em nossa plataforma!\n\n` +
+          `Entre em contato com a nossa central de atendimento.`,
+        end: true,
+      };
+    }
+
+    if (from && collaborator.phone !== from) {
       const [name] = collaborator.name.split(' ');
 
       return {
@@ -47,6 +60,8 @@ const re = async (
         end: true,
       };
     }
+
+    CollaboratorCache.set(conversation.id, collaborator);
 
     const doc: string[] = ['CPF', 'RG'];
 

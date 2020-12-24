@@ -36,10 +36,6 @@ export default class CreateCollaboratorsTable1608413773242
             isNullable: true,
           },
           {
-            name: 'security_code',
-            type: 'varchar',
-          },
-          {
             name: 'is_enable',
             type: 'boolean',
             default: true,

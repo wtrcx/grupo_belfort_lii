@@ -1,4 +1,4 @@
-import { ReturnScript } from '../interfaces';
+import { ReturnScript } from '../../interfaces';
 
 const name = async (message: string): Promise<ReturnScript> => {
   const regex = new RegExp('^[a-zA-Z\\d\\-_\\s]+$');

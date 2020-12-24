@@ -7,6 +7,7 @@ const paths = {
   '@services': path.join(__dirname, '..', 'services'),
   '@repositories': path.join(__dirname, '..', 'repositories'),
   '@errors': path.join(__dirname, '..', 'errors'),
+  '@cache': path.join(__dirname, '..', 'cache'),
 };
 
 moduleAlias.addAliases(paths);

@@ -1,12 +1,16 @@
 import { create, Whatsapp } from 'venom-bot';
+import { getCustomRepository } from 'typeorm';
 
 import fs from 'fs';
 import path from 'path';
-import BadRequest from '@errors/badRequest';
+
 import ClientRepository from '@repositories/clientRepository';
-import { getCustomRepository } from 'typeorm';
-import ServerError from '@errors/serverError';
 import UserRepository from '@repositories/userRepository';
+
+import BadRequest from '@errors/badRequest';
+import ServerError from '@errors/serverError';
+
+import ScriptManager from '../scripts';
 
 interface WAClient {
   id: string;
@@ -57,7 +61,13 @@ class WhatsappService {
   }
 
   public async client(clientId: string): Promise<void> {
-    const imageDirection = path.resolve(__dirname, '..', 'tmp', 'whatsapp');
+    const imageDirection = path.resolve(
+      __dirname,
+      '..',
+      'tmp',
+      'whatsapp',
+      `${clientId}.png`,
+    );
 
     const clientRepository: ClientRepository = getCustomRepository(
       ClientRepository,
@@ -77,7 +87,7 @@ class WhatsappService {
         const matches = base64Qr.match(/^data:([A-Za-z-+\\/]+);base64,(.+)$/);
 
         if (!matches || matches.length !== 3) {
-          throw new Error('Venom API: Invalid input string');
+          throw new ServerError('Venom API: Invalid input string');
         }
 
         const type = matches[1];
@@ -85,20 +95,18 @@ class WhatsappService {
 
         const imageBuffer = { type, data };
 
-        fs.writeFile(
-          `${imageDirection}/${clientId}.png`,
-          imageBuffer.data,
-          'binary',
-          err => {
-            if (err != null) {
-              throw new Error(`Venom API: ${err.message}`);
-            }
-          },
-        );
+        fs.writeFile(imageDirection, imageBuffer.data, 'binary', err => {
+          if (err != null) {
+            throw new ServerError(`Venom API: ${err.message}`);
+          }
+        });
       },
       undefined,
       {
         logQR: false,
+        disableWelcome: true,
+        updatesLog: false,
+        mkdirFolderToken: '/node_modules/venom-bot',
       },
     );
 
@@ -107,14 +115,13 @@ class WhatsappService {
       whatsappClient.access = token.WABrowserId;
       await clientRepository.save(whatsappClient);
       this.chat(whatsapp);
-      await fs.promises.unlink(`${imageDirection}/${clientId}.png`);
     } catch (error) {
       throw new ServerError(`Venom API: ${error}`);
     }
   }
 
   public async chat(client: Whatsapp): Promise<void> {
-    client.onMessage(async message => {
+    await client.onMessage(async message => {
       if (!message.isGroupMsg) {
         const clientRepository: ClientRepository = getCustomRepository(
           ClientRepository,
@@ -127,23 +134,33 @@ class WhatsappService {
         });
 
         if (!whatsapp) {
-          throw new ServerError('Internal server error');
+          await client.sendText(
+            message.from,
+            '*👨‍🔧 Estamos passando por uma manutenção.* Tente novamente mais tarde!',
+          );
+          return;
         }
 
-        switch (whatsapp.script) {
-          case 'grupo_belfort_geral':
-            client.sendText(
-              message.from,
-              'Você está conversando com o GRUPO BELFORT',
-            );
-            break;
+        const scriptManager = new ScriptManager(
+          whatsapp,
+          message.from,
+          message.body,
+          whatsapp.script,
+          whatsapp.service,
+        );
 
-          case 'grupo_mag_geral':
-            client.sendText(message.from, 'Você está conversando com o MAG');
-            break;
+        const returnScript = await scriptManager.chat();
 
-          default:
-            break;
+        if (Array.isArray(returnScript.message)) {
+          returnScript.message.forEach(messages =>
+            client.sendText(message.from, messages),
+          );
+        } else {
+          await client.sendText(message.from, returnScript.message);
+        }
+
+        if (returnScript.end) {
+          await client.clearChat(message.chatId);
         }
       }
     });
