@@ -165,6 +165,18 @@ class WhatsappService {
       }
     });
   }
+
+  public async restart(): Promise<void> {
+    const clientRepository: ClientRepository = getCustomRepository(
+      ClientRepository,
+    );
+
+    const clients = await clientRepository.find({
+      where: { service: 'whatsapp', is_enable: true },
+    });
+
+    clients.forEach(client => this.client(client.id));
+  }
 }
 
 export default WhatsappService;

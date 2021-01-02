@@ -35,6 +35,20 @@ whatsappRoute.post(
   },
 );
 
+whatsappRoute.get(
+  '/restart',
+  ensureAuthenticated(['administrator', 'whatsapp_create']),
+  async (request, response) => {
+    whatsappService.restart();
+
+    return response.status(201).json({
+      status: true,
+      message: 'Whatsapp is connected',
+      timestamp: new Date().getTime(),
+    });
+  },
+);
+
 whatsappRoute.use(
   '/qr',
   express.static(path.resolve(__dirname, '..', 'tmp', 'whatsapp')),
