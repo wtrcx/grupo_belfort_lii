@@ -33,16 +33,6 @@ class HistoticRepository extends Repository<Historic> {
 
     return historic;
   }
-
-  public async getHistoryByConversation(
-    conversation: Conversation,
-  ): Promise<Historic[]> {
-    const historic = await this.find({
-      where: { conversation },
-      order: { created_at: 'ASC' },
-    });
-    return historic;
-  }
 }
 
 export default HistoticRepository;

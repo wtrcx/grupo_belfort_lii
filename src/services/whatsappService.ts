@@ -120,8 +120,8 @@ class WhatsappService {
       await clientRepository.save(whatsappClient);
       fs.promises
         .unlink(imageDirection)
-        .then(OK => console.log(OK))
-        .catch(error => console.log(error));
+        .then(() => console.log('QR Code has been deleted!'))
+        .catch(() => console.log('QR Code has been deleted!'));
       this.chat(whatsapp);
     } catch (error) {
       throw new ServerError(`Venom API: ${error}`);
@@ -155,7 +155,11 @@ class WhatsappService {
           return;
         }
 
-        if (message.isMedia === true || message.isMMS === true) {
+        if (
+          message.isMedia === true ||
+          message.isMMS === true ||
+          message.type === 'document'
+        ) {
           const extension = mime
             .extension(message.mimetype)
             .toString()

@@ -4,9 +4,8 @@ import ConversationsRepository from '@repositories/conversationRepository';
 import Conversation from '@models/Conversations';
 import Client from '@models/Client';
 import ConversationDTO from '@dtos/conversationDTO';
-import Historic from '@models/Historic';
-import CustomerIndicationDTO from '@dtos/customerIndicationDTO';
-import BeWorkerDTO from '@dtos/beWorkerDTO';
+import NotFound from '@errors/notFound';
+import HistoricService from './historicService';
 
 class ConversationsService {
   public async chatOn(
@@ -65,66 +64,149 @@ class ConversationsService {
     conversationsRepository.remove(conversation);
   }
 
-  public async getAllHistoric(): Promise<ConversationDTO[]> {
+  public async getAllHistoricClose(
+    conversation?: Conversation,
+  ): Promise<ConversationDTO[] | ConversationDTO | null> {
     const conversationsRepository = getCustomRepository(
       ConversationsRepository,
     );
 
-    const conversations = await conversationsRepository.getAllHistoric();
+    const historicService = new HistoricService();
 
-    const conversationsDTO: ConversationDTO[] = conversations.map(
-      conversation => {
-        return {
-          id: conversation.id,
-          client: conversation.client.script,
-          service: conversation.client.service,
-          company: conversation.collaborator
-            ? conversation.collaborator.company
-            : null,
-          re: conversation.collaborator ? conversation.collaborator.re : null,
-          name: conversation.collaborator
-            ? conversation.collaborator.name
-            : null,
-          email: conversation.collaborator
-            ? conversation.collaborator.email
-            : null,
-          phone: conversation.access,
-          script: conversation.name,
-          date: conversation.created_at,
-          historic: this.toDTO(conversation.name, conversation.historic),
-        };
-      },
+    const conversationList = await conversationsRepository.getAllHistoricClose(
+      conversation,
     );
+
+    let conversationsDTO: ConversationDTO[] | ConversationDTO | null;
+
+    if (Array.isArray(conversationList)) {
+      conversationsDTO = conversationList.map(conversations => {
+        conversations.created_at = new Date(
+          conversations.created_at.getTime() - 10800000,
+        );
+        return {
+          id: conversations.id,
+          client: conversations.client.script,
+          service: conversations.client.service,
+          company: conversations.collaborator
+            ? conversations.collaborator.company
+            : null,
+          re: conversations.collaborator ? conversations.collaborator.re : null,
+          name: conversations.collaborator
+            ? conversations.collaborator.name
+            : null,
+          email: conversations.collaborator
+            ? conversations.collaborator.email
+            : null,
+          phone: conversations.access,
+          script: conversations.name,
+          date: conversations.created_at,
+          historic: historicService.toDTO(conversations),
+        };
+      });
+    } else if (conversationList) {
+      conversationList.created_at = new Date(
+        conversationList.created_at.getTime() - 10800000,
+      );
+      conversationsDTO = {
+        id: conversationList.id,
+        client: conversationList.client.script,
+        service: conversationList.client.service,
+        company: conversationList.collaborator
+          ? conversationList.collaborator.company
+          : null,
+        re: conversationList.collaborator
+          ? conversationList.collaborator.re
+          : null,
+        name: conversationList.collaborator
+          ? conversationList.collaborator.name
+          : null,
+        email: conversationList.collaborator
+          ? conversationList.collaborator.email
+          : null,
+        phone: conversationList.access,
+        script: conversationList.name,
+        date: conversationList.created_at,
+        historic: historicService.toDTO(conversationList),
+      };
+    } else {
+      throw new NotFound('Conversation not found');
+    }
 
     return conversationsDTO;
   }
 
-  public toDTO(
-    name: string,
-    historic: Historic[],
-  ): CustomerIndicationDTO | BeWorkerDTO | null {
-    switch (name) {
-      case 'customer_indication':
-        const customerIndicationDTO = new Object();
+  public async getAllHistoricOpen(
+    conversation?: Conversation,
+  ): Promise<ConversationDTO[] | ConversationDTO | null> {
+    const conversationsRepository = getCustomRepository(
+      ConversationsRepository,
+    );
 
-        historic.forEach(x => {
-          customerIndicationDTO[x.request] = x.response;
-        });
+    const historicService = new HistoricService();
 
-        return customerIndicationDTO as CustomerIndicationDTO;
+    const conversationList = await conversationsRepository.getAllHistoricOpen(
+      conversation,
+    );
 
-      case 'be_worker':
-        const beWorkerDTO = new Object();
+    let conversationsDTO: ConversationDTO[] | ConversationDTO | null;
 
-        historic.forEach(x => {
-          beWorkerDTO[x.request] = x.response;
-        });
+    if (Array.isArray(conversationList)) {
+      conversationsDTO = conversationList.map(conversations => {
+        conversations.created_at = new Date(
+          conversations.created_at.getTime() - 10800000,
+        );
 
-        return beWorkerDTO as BeWorkerDTO;
-
-      default:
-        return null;
+        return {
+          id: conversations.id,
+          client: conversations.client.script,
+          service: conversations.client.service,
+          company: conversations.collaborator
+            ? conversations.collaborator.company
+            : null,
+          re: conversations.collaborator ? conversations.collaborator.re : null,
+          name: conversations.collaborator
+            ? conversations.collaborator.name
+            : null,
+          email: conversations.collaborator
+            ? conversations.collaborator.email
+            : null,
+          phone: conversations.access,
+          script: conversations.name,
+          date: conversations.created_at,
+          historic: historicService.toDTO(conversations),
+        };
+      });
+    } else if (conversationList) {
+      conversationList.created_at = new Date(
+        conversationList.created_at.getTime() - 10800000,
+      );
+      conversationsDTO = {
+        id: conversationList.id,
+        client: conversationList.client.script,
+        service: conversationList.client.service,
+        company: conversationList.collaborator
+          ? conversationList.collaborator.company
+          : null,
+        re: conversationList.collaborator
+          ? conversationList.collaborator.re
+          : null,
+        name: conversationList.collaborator
+          ? conversationList.collaborator.name
+          : null,
+        email: conversationList.collaborator
+          ? conversationList.collaborator.email
+          : null,
+        phone: conversationList.access,
+        script: conversationList.name,
+        date: conversationList.created_at,
+        historic: historicService.toDTO(conversationList),
+      };
+    } else {
+      throw new NotFound('Conversation not found');
     }
+
+    return conversationsDTO;
   }
 }
 

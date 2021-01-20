@@ -4,6 +4,7 @@ import HistoricRepository from '@repositories/historicRepository';
 import Historic from '@models/Historic';
 import Conversation from '@models/Conversations';
 import BeWorkerDTO from '@dtos/beWorkerDTO';
+import CustomerIndicationDTO from '@dtos/customerIndicationDTO';
 
 class HistoricService {
   private readonly historicRepository: HistoricRepository = getCustomRepository(
@@ -63,34 +64,29 @@ class HistoricService {
     await this.historicRepository.remove(historic);
   }
 
-  public async getHistoryByConversation(
+  public toDTO(
     conversation: Conversation,
-  ): Promise<BeWorkerDTO | null> {
+  ): CustomerIndicationDTO | BeWorkerDTO | null {
     switch (conversation.name) {
+      case 'customer_indication':
+        const customerIndicationDTO = new Object() as CustomerIndicationDTO;
+
+        conversation.historic.forEach(x => {
+          customerIndicationDTO[x.request] = x.response;
+        });
+
+        return customerIndicationDTO;
+
       case 'be_worker':
-        const historic = await this.historicRepository.getHistoryByConversation(
-          conversation,
-        );
+        const beWorkerDTO = new Object() as BeWorkerDTO;
 
-        const beWorkerDTO = this.toDTO(conversation.name, historic);
-
-        return beWorkerDTO;
-
-      default:
-        return null;
-    }
-  }
-
-  public toDTO(name: string, historic: Historic[]): BeWorkerDTO | null {
-    switch (name) {
-      case 'be_worker':
-        const beWorkerDTO = new Object();
-
-        historic.forEach(x => {
+        conversation.historic.forEach(x => {
           beWorkerDTO[x.request] = x.response;
         });
 
-        return beWorkerDTO as BeWorkerDTO;
+        beWorkerDTO.phone = conversation.access;
+
+        return beWorkerDTO;
 
       default:
         return null;

@@ -28,11 +28,42 @@ class ConversationsRepository extends Repository<Conversation> {
     return conversation;
   }
 
-  public async getAllHistoric(): Promise<Conversation[]> {
-    const conversations = await this.find({
-      relations: ['client', 'collaborator', 'historic'],
-      where: { close: true },
-    });
+  public async getAllHistoricClose(
+    conversation?: Conversation,
+  ): Promise<Conversation[] | Conversation | null> {
+    const conversations = conversation
+      ? await this.findOne({
+          relations: ['client', 'collaborator', 'historic'],
+          where: { id: conversation.id, close: true },
+        })
+      : await this.find({
+          relations: ['client', 'collaborator', 'historic'],
+          where: { close: true },
+        });
+
+    if (!conversations) {
+      return null;
+    }
+    return conversations;
+  }
+
+  public async getAllHistoricOpen(
+    conversation?: Conversation,
+  ): Promise<Conversation[] | Conversation | null> {
+    const conversations = conversation
+      ? await this.findOne({
+          relations: ['client', 'collaborator', 'historic'],
+          where: { id: conversation.id, close: false },
+        })
+      : await this.find({
+          relations: ['client', 'collaborator', 'historic'],
+          where: { close: false },
+        });
+
+    if (!conversations) {
+      return null;
+    }
+
     return conversations;
   }
 }

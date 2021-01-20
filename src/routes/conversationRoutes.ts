@@ -11,7 +11,7 @@ conversationRoutes.get(
   async (request, response) => {
     const conversationsService = new ConversationsService();
 
-    const conversations = await conversationsService.getAllHistoric();
+    const conversations = await conversationsService.getAllHistoricClose();
 
     return response.status(200).json(conversations);
   },

@@ -1,4 +1,5 @@
-import CustomerIndicationDTO from './customerIndicationDTO copy';
+import BeWorkerDTO from './beWorkerDTO';
+import CustomerIndicationDTO from './customerIndicationDTO';
 
 export default interface ConversationDTO {
   id: string;
@@ -9,7 +10,7 @@ export default interface ConversationDTO {
   name: string | null;
   email: string | null;
   phone: string;
-  script: string;
+  script?: string;
   date: Date;
-  historic: CustomerIndicationDTO | null;
+  historic: CustomerIndicationDTO | BeWorkerDTO | null;
 }

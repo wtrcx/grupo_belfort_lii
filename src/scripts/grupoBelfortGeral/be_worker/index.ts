@@ -13,6 +13,7 @@ import ViaCepDTO from '@dtos/viaCepDTO';
 import ServerError from '@errors/serverError';
 import FileDTO from '@dtos/fileDTO';
 import EmailService from '@services/emailService';
+import BeWorkerDTO from '@dtos/beWorkerDTO';
 import name from './01.name';
 import email from './02.email';
 import address from './03.address';
@@ -239,6 +240,8 @@ class BeWorker {
 
             return fileScript;
           }
+
+          return fileScript;
         }
 
         return {
@@ -259,22 +262,24 @@ class BeWorker {
     conversation: Conversations,
     filePath?: FileDTO,
   ): Promise<boolean> {
-    const beWorkerDTO = await this.historicService.getHistoryByConversation(
+    const conversationDTO = await this.conversationsService.getAllHistoricOpen(
       conversation,
     );
 
-    if (beWorkerDTO) {
+    if (conversationDTO && !Array.isArray(conversationDTO)) {
+      const beWorkerDTO = conversationDTO.historic as BeWorkerDTO;
+
       beWorkerDTO.file = filePath;
 
       const emailService = new EmailService(
-        'wxavier@belfort.com.br',
+        beWorkerDTO.email,
         'grupobelfort551137232021@gmail.com',
       );
 
       await emailService.send(
-        beWorkerDTO.email,
-        '[LILI] - Trabalhe Conosco',
-        'teste',
+        'wesley@trcx.com.br',
+        '[CHATBOT] - Trabalhe Conosco',
+        JSON.stringify(conversationDTO),
         filePath,
       );
       return true;
