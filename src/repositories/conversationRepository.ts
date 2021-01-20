@@ -27,6 +27,14 @@ class ConversationsRepository extends Repository<Conversation> {
 
     return conversation;
   }
+
+  public async getAllHistoric(): Promise<Conversation[]> {
+    const conversations = await this.find({
+      relations: ['client', 'collaborator', 'historic'],
+      where: { close: true },
+    });
+    return conversations;
+  }
 }
 
 export default ConversationsRepository;

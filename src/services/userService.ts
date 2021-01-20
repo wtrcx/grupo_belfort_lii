@@ -4,7 +4,7 @@ import UserRepository from '@repositories/userRepository';
 
 import User from '@models/User';
 
-import UserDTO from '@dtos/userDto';
+import UserDTO from '@dtos/userDTO';
 import BadRequest from '@errors/badRequest';
 import RoleRepository from '@repositories/roleRepository';
 import ServerError from '@errors/serverError';

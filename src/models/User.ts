@@ -22,7 +22,7 @@ class User {
   email: string;
 
   @Column()
-  password: string;
+  password?: string;
 
   @Column()
   is_enable: boolean;

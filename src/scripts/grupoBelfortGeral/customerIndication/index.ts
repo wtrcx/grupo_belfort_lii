@@ -1,5 +1,5 @@
 import ViaCepCache from '@cache/viaCepCache';
-import ViaCepDTO from '@dtos/viaCepDto';
+import ViaCepDTO from '@dtos/viaCepDTO';
 import ServerError from '@errors/serverError';
 import Client from '@models/Client';
 import Conversations from '@models/Conversations';
@@ -45,16 +45,16 @@ class CustomerIndication {
         finish: true,
       };
     }
-    const history = await this.historicService.sequenceStatus(conversation);
+    const historic = await this.historicService.sequenceStatus(conversation);
 
-    if (history) {
-      switch (history.sequence) {
+    if (historic) {
+      switch (historic.sequence) {
         case 1:
           const nameScript = await name(this.message);
 
           if (nameScript.status) {
-            history.response = this.message.toUpperCase();
-            await this.historicService.update(history);
+            historic.response = this.message.toUpperCase();
+            await this.historicService.update(historic);
 
             await this.historicService.execute(
               conversation,
@@ -68,25 +68,25 @@ class CustomerIndication {
 
           return { message: nameScript.message, end: nameScript.end };
         case 2:
-          if (history.response === 'option') {
+          if (historic.response === 'option') {
             switch (this.message) {
               case '1':
-                history.response = '1';
-                await this.historicService.update(history);
+                historic.response = '1';
+                await this.historicService.update(historic);
                 return {
                   message:
                     '➡️ Preciso que nos informe agora o ✉️ *e-mail* do cliente!',
                 };
               case '2':
-                history.response = '2';
-                await this.historicService.update(history);
+                historic.response = '2';
+                await this.historicService.update(historic);
                 return {
                   message:
                     '➡️ Preciso que nos informe agora o ✉️ *e-mail* do cliente!',
                 };
               case '3':
-                history.response = 'not opting';
-                await this.historicService.update(history);
+                historic.response = 'not_opting';
+                await this.historicService.update(historic);
                 await this.historicService.execute(
                   conversation,
                   3,
@@ -124,15 +124,20 @@ class CustomerIndication {
                 '* O *CEP* deve possuir apenas numeros\n',
             ];
 
-            if (history.response === '2') {
+            if (historic.response === '2') {
               await this.historicService.execute(
                 conversation,
                 3,
                 'phone',
-                'not opting',
+                'not_opting',
               );
 
-              await this.historicService.execute(conversation, 4, 'cep', '');
+              await this.historicService.execute(
+                conversation,
+                4,
+                'zip_code',
+                '',
+              );
             } else {
               emailScript.message = [
                 '📞 Vamos cadastrar agora o telefone do cliente',
@@ -144,8 +149,8 @@ class CustomerIndication {
               await this.historicService.execute(conversation, 3, 'phone', '');
             }
 
-            history.response = this.message.toLowerCase();
-            await this.historicService.update(history);
+            historic.response = this.message.toLowerCase();
+            await this.historicService.update(historic);
 
             return { message: emailScript.message };
           }
@@ -155,16 +160,16 @@ class CustomerIndication {
           const phoneScript = await phone(this.message);
 
           if (phoneScript.status) {
-            history.response = this.message;
-            await this.historicService.update(history);
-            await this.historicService.execute(conversation, 4, 'cep', '');
+            historic.response = this.message;
+            await this.historicService.update(historic);
+            await this.historicService.execute(conversation, 4, 'zip_code', '');
 
             return { message: phoneScript.message };
           }
 
           return { message: phoneScript.message, end: phoneScript.end };
         case 4:
-          const [validCEP, cep] = history.response.split('@');
+          const [validCEP, cep] = historic.response.split('@');
 
           if (validCEP === 'OK') {
             switch (this.message) {
@@ -177,35 +182,40 @@ class CustomerIndication {
                   throw new ServerError('Internal server error');
                 }
 
-                history.response = cep;
-                await this.historicService.update(history);
+                historic.response = cep;
+                await this.historicService.update(historic);
 
                 await this.historicService.execute(
                   conversation,
                   4,
-                  'logradouro',
+                  'public_place',
                   logradouro,
                 );
                 await this.historicService.execute(
                   conversation,
                   4,
-                  'bairro',
+                  'neighborhood',
                   bairro,
                 );
 
                 await this.historicService.execute(
                   conversation,
                   4,
-                  'localidade',
+                  'locality',
                   localidade,
                 );
 
-                await this.historicService.execute(conversation, 4, 'uf', uf);
+                await this.historicService.execute(
+                  conversation,
+                  4,
+                  'state',
+                  uf,
+                );
 
                 await this.historicService.execute(
                   conversation,
                   5,
-                  'numero',
+                  'number',
                   '',
                 );
 
@@ -217,8 +227,8 @@ class CustomerIndication {
                   ],
                 };
               case '2':
-                history.response = '';
-                await this.historicService.update(history);
+                historic.response = '';
+                await this.historicService.update(historic);
 
                 return {
                   message: '➡️ Digite novamente o *CEP* do cliente.',
@@ -235,8 +245,8 @@ class CustomerIndication {
           const addressScript = await address(this.message);
 
           if (addressScript.status) {
-            history.response = `OK@${this.message}`;
-            await this.historicService.update(history);
+            historic.response = `OK@${this.message}`;
+            await this.historicService.update(historic);
           }
           return { message: addressScript.message };
 
@@ -244,13 +254,13 @@ class CustomerIndication {
           const numberScript = await number(this.message);
 
           if (numberScript.status) {
-            history.response = this.message;
-            await this.historicService.update(history);
+            historic.response = this.message;
+            await this.historicService.update(historic);
 
             await this.historicService.execute(
               conversation,
               6,
-              'complemento',
+              'complement',
               '',
             );
 
@@ -263,9 +273,9 @@ class CustomerIndication {
           const complementScript = await complement(this.message);
 
           if (complementScript.status) {
-            history.response =
-              this.message === '1' ? 'not opting' : complementScript.data;
-            await this.historicService.update(history);
+            historic.response =
+              this.message === '1' ? 'not_opting' : complementScript.data;
+            await this.historicService.update(historic);
 
             return {
               message: complementScript.message,

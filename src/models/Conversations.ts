@@ -6,10 +6,12 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 
 import Client from './Client';
 import Collaborators from './Collaborators';
+import Historic from './Historic';
 
 @Entity('conversations')
 class Conversation {
@@ -24,11 +26,14 @@ class Conversation {
   @JoinColumn({ name: 'collaborator_id' })
   collaborator: Collaborators;
 
+  @OneToMany(() => Historic, historic => historic.conversation)
+  historic: Historic[];
+
   @Column()
   access: string;
 
   @Column()
-  name: string;
+  name?: string;
 
   @Column()
   close: boolean;

@@ -6,9 +6,11 @@ import ConversationsService from '@services/conversationService';
 import HistoricService from '@services/historicService';
 import SarService from '@services/sarService';
 
+import FileDTO from '@dtos/fileDTO';
 import { ReturnScript } from '../interfaces';
 import AwaitingRegistration from './awaitingRegistration';
 import CustomerIndication from './customerIndication';
+import BeWorker from './be_worker';
 
 class GrupoBelfortGeral {
   private readonly collaboratorService: CollaboratorsService = new CollaboratorsService();
@@ -27,11 +29,20 @@ class GrupoBelfortGeral {
 
   private readonly service: string;
 
-  constructor(client: Client, from: string, message: string, service: string) {
+  private readonly file: FileDTO | undefined;
+
+  constructor(
+    client: Client,
+    from: string,
+    message: string,
+    service: string,
+    file?: FileDTO,
+  ) {
     this.client = client;
     this.from = from;
     this.message = message;
     this.service = service;
+    this.file = file;
   }
 
   public async init(): Promise<ReturnScript> {
@@ -91,12 +102,11 @@ class GrupoBelfortGeral {
             start: true,
             message:
               `🙋🏼‍♀️ Olá *${name}*, seja bem vindo ao atendimento exclusivo para os colaboradores do *GRUPO BELFORT*!\n\n` +
-              `Meu nome é Lili e darei continuidade ao seu atendimento.\n\n` +
+              `Meu nome é *Lili* e darei continuidade ao seu atendimento.\n\n` +
               'Escolha uma das opções abaixo:\n\n' +
               '*1.* Indicação de cliente\n' +
-              '*2.* Indicação de colaborador\n' +
-              '*3.* Demais informações\n' +
-              '*4.* Encerrar atendimento',
+              '*2.* Demais informações\n' +
+              '*3.* Encerrar atendimento',
           };
         }
 
@@ -139,13 +149,21 @@ class GrupoBelfortGeral {
               'O *nome do cliente* deverá conter apenas *letras*, *numeros* e *espaço* com no mínimo 5 caracteres.',
             ],
           };
-        // case '2':
-        // conversation.name = 'collaborator_indication';
-        // await this.conversationsService.update(conversation);
-        //   break;
-        case '3':
-          conversation.name = 'complete_conversation@other information';
+        case '2':
+          conversation.name = 'other_information';
+          conversation.close = true;
           await this.conversationsService.update(conversation);
+
+          const newConversation = await this.conversationsService.execute(
+            this.client,
+            this.from,
+            false,
+            'complete_conversation',
+          );
+
+          newConversation.collaborator = conversation.collaborator;
+          await this.conversationsService.update(newConversation);
+
           return {
             message: [
               'Para demais informações, entre em contato conosco através ' +
@@ -155,9 +173,9 @@ class GrupoBelfortGeral {
                 '*Para informações gerais:*\nrelacionamento@belfort.com.br\n(11) 3723-2020\n\n',
               'Posso lhe ajudar com algo mais?\n\n*1.* Sim\n*2.* Não',
             ],
-            finish: true,
+            end: true,
           };
-        case '4':
+        case '3':
           conversation.name = 'unsupported';
           conversation.close = true;
           await this.conversationsService.update(conversation);
@@ -176,9 +194,8 @@ class GrupoBelfortGeral {
               'por favor tente novamente\n\n' +
               'Escolha uma das opções abaixo:\n\n' +
               '*1.* Indicação de cliente\n' +
-              '*2.* Indicação de colaborador\n' +
-              '*3.* Demais informações\n' +
-              '*4.* Encerrar atendimento',
+              '*2.* Demais informações\n' +
+              '*3.* Encerrar atendimento',
           };
       }
     } else {
@@ -221,13 +238,31 @@ class GrupoBelfortGeral {
               }, '➡️ Selecione a sua *EMPRESA*:\n'),
             ],
           };
-        // case '2':
-        // conversation.name = 'be_worker';
-        // await this.conversationsService.update(conversation);
-        //   break;
-        case '3':
-          conversation.name = 'complete_conversation@other information';
+        case '2':
+          conversation.name = 'be_worker';
           await this.conversationsService.update(conversation);
+
+          await this.historicService.execute(conversation, 1, 'name', '');
+
+          return {
+            message: [
+              '➡️ Para começar, preciso que nos informe o seu *nome completo*',
+              'Deverá conter apenas *letras* e *espaço* com no mínimo 7 caracteres incluindo o *sobrenome*',
+            ],
+          };
+
+        case '3':
+          conversation.name = 'other_information';
+          conversation.close = true;
+          await this.conversationsService.update(conversation);
+
+          await this.conversationsService.execute(
+            this.client,
+            this.from,
+            false,
+            'complete_conversation',
+          );
+
           return {
             message: [
               'Para demais informações, entre em contato conosco através ' +
@@ -237,7 +272,7 @@ class GrupoBelfortGeral {
                 '*Para informações gerais:*\nrelacionamento@belfort.com.br\n(11) 3723-2020\n\n',
               'Posso lhe ajudar com algo mais?\n\n*1.* Sim\n*2.* Não',
             ],
-            finish: true,
+            end: true,
           };
         case '4':
           conversation.name = 'unsupported';
@@ -267,7 +302,7 @@ class GrupoBelfortGeral {
   }
 
   public async continue(conversation: Conversation): Promise<ReturnScript> {
-    const [nameScript, nameConversation] = conversation.name.split('@');
+    const nameScript = conversation.name;
 
     if (conversation.collaborator) {
       switch (nameScript) {
@@ -282,20 +317,27 @@ class GrupoBelfortGeral {
           const returnScript = await customerIndication.chat(conversation);
 
           if (returnScript.finish) {
-            conversation.name = `complete_conversation@${conversation.name}`;
+            conversation.close = true;
             await this.conversationsService.update(conversation);
+
+            const newConversation = await this.conversationsService.execute(
+              this.client,
+              this.from,
+              false,
+              'complete_conversation',
+            );
+
+            newConversation.collaborator = conversation.collaborator;
+            await this.conversationsService.update(newConversation);
           }
 
           return returnScript;
 
-        // case 'collaborator_indication':
-        //   break;
         case 'complete_conversation':
+          await this.conversationsService.delete(conversation);
           switch (this.message) {
             case '1':
-              conversation.name = nameConversation;
-              conversation.close = true;
-              await this.conversationsService.update(conversation);
+              const [name] = conversation.collaborator.name.split(' ');
 
               const newConversation = await this.conversationsService.execute(
                 this.client,
@@ -306,22 +348,16 @@ class GrupoBelfortGeral {
               newConversation.collaborator = conversation.collaborator;
               await this.conversationsService.update(newConversation);
 
-              const [name] = newConversation.collaborator.name.split(' ');
-
               return {
                 start: true,
                 message:
                   `✅ Otimo *${name}*, escolha uma das opções abaixo:\n\n` +
                   '*1.* Indicação de cliente\n' +
-                  '*2.* Indicação de colaborador\n' +
-                  '*3.* Demais informações\n' +
-                  '*4.* Encerrar atendimento',
+                  '*2.* Demais informações\n' +
+                  '*3.* Encerrar atendimento',
               };
 
             case '2':
-              conversation.name = nameConversation;
-              conversation.close = true;
-              await this.conversationsService.update(conversation);
               return {
                 message: [
                   'O *GRUPO BELFORT* agradece o seu contato.',
@@ -363,16 +399,41 @@ class GrupoBelfortGeral {
 
           return awaitingRegistration.chat(conversation);
 
-        // case 'be_worker':
-        //   break;
+        case 'be_worker':
+          const beWorker = new BeWorker(
+            this.client,
+            this.from,
+            this.message,
+            this.service,
+            this.file,
+          );
+
+          const returnScript = await beWorker.chat(conversation);
+
+          if (returnScript.finish) {
+            conversation.close = true;
+            await this.conversationsService.update(conversation);
+
+            await this.conversationsService.execute(
+              this.client,
+              this.from,
+              false,
+              'complete_conversation',
+            );
+          }
+
+          return returnScript;
 
         case 'complete_conversation':
+          await this.conversationsService.delete(conversation);
+
           switch (this.message) {
             case '1':
-              conversation.name = nameConversation;
-              conversation.close = true;
-              await this.conversationsService.update(conversation);
-
+              await this.conversationsService.execute(
+                this.client,
+                this.from,
+                false,
+              );
               return {
                 start: true,
                 message:
@@ -384,9 +445,6 @@ class GrupoBelfortGeral {
               };
 
             case '2':
-              conversation.name = nameConversation;
-              conversation.close = true;
-              await this.conversationsService.update(conversation);
               return {
                 message: [
                   'O *GRUPO BELFORT* agradece o seu contato.',

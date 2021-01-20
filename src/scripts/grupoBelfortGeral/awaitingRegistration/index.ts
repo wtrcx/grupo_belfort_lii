@@ -9,6 +9,7 @@ import CollaboratorCache from '@cache/collaboratorCache';
 
 // Script: Authentication Collaborators
 import Client from '@models/Client';
+import GoogleService from '@services/googleService';
 import company from './01.company';
 import re from './02.re';
 import documentConfirmation from './03.documentConfirmation';
@@ -22,6 +23,8 @@ class AwaitingRegistration {
   private readonly conversationsService: ConversationsService = new ConversationsService();
 
   private readonly historicService: HistoricService = new HistoricService();
+
+  private readonly googleService: GoogleService = new GoogleService();
 
   private readonly client: Client;
 
@@ -45,7 +48,7 @@ class AwaitingRegistration {
       historic = await this.historicService.execute(
         conversation,
         1,
-        'name',
+        'company',
         '',
       );
     }
@@ -227,21 +230,21 @@ class AwaitingRegistration {
       case 4:
         const collaborator = CollaboratorCache.get(conversation.id);
         let newConversation;
-        let newcollaborator;
+        let newCollaborator;
 
         if (historic.response === 'optant') {
           const emailScript = await email(this.message);
 
           if (emailScript.status) {
             collaborator.email = this.message.toLocaleLowerCase();
-            newcollaborator = await this.collaboratorService.execute(
+            newCollaborator = await this.collaboratorService.execute(
               collaborator,
             );
 
             historic.response = collaborator.email;
             await this.historicService.update(historic);
 
-            conversation.collaborator = newcollaborator;
+            conversation.collaborator = newCollaborator;
             conversation.name = 'collaborator_registration';
             conversation.close = true;
             await this.conversationsService.update(conversation);
@@ -252,7 +255,7 @@ class AwaitingRegistration {
               false,
             );
 
-            newConversation.collaborator = newcollaborator;
+            newConversation.collaborator = newCollaborator;
             await this.conversationsService.update(newConversation);
 
             return { message: emailScript.message };
@@ -272,14 +275,14 @@ class AwaitingRegistration {
             };
 
           case '2':
-            historic.response = 'not opting';
+            historic.response = 'not_opting';
             await this.historicService.update(historic);
-            newcollaborator = await this.collaboratorService.execute(
+            newCollaborator = await this.collaboratorService.execute(
               collaborator,
             );
 
             conversation.name = 'collaborator_registration';
-            conversation.collaborator = newcollaborator;
+            conversation.collaborator = newCollaborator;
             conversation.close = true;
             await this.conversationsService.update(conversation);
 
@@ -289,7 +292,7 @@ class AwaitingRegistration {
               false,
             );
 
-            newConversation.collaborator = newcollaborator;
+            newConversation.collaborator = newCollaborator;
             await this.conversationsService.update(newConversation);
 
             return {
@@ -306,9 +309,11 @@ class AwaitingRegistration {
 
           default:
             return {
-              message:
-                '*👨‍🔧 Estamos passando por uma manutenção.* Tente novamente mais tarde!',
-              end: true,
+              message: [
+                '😕 Hum, infelizmente não encontramos a opção informada, por favor tente novamente',
+                'Escolha uma das opções abaixo:\n\n*1.* Sim, desejo cadastrar o meu ✉️ *e-mail*.\n' +
+                  '*2.* Não, seguirei sem cadastrar o meu ✉️ *e-mail*.',
+              ],
             };
         }
 

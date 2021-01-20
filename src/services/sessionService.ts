@@ -1,7 +1,7 @@
 import { getCustomRepository } from 'typeorm';
 import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
-import LoginDTO from '@dtos/loginDto';
+import LoginDTO from '@dtos/loginDTO';
 import UserRepository from '@repositories/userRepository';
 import Unauthorized from '@errors/unauthorizedError';
 import ServerError from '@errors/serverError';

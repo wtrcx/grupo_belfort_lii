@@ -1,11 +1,10 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 
 import userRoutes from './userRoutes';
 import profileRoutes from './profileRoutes';
 import sessionRoutes from './sessionRoutes';
 import whatsappRoute from './whatsappRoutes';
-
-import ensureAuthenticated from '../middlewares/ensureAuthenticated';
+import conversationRoutes from './conversationRoutes';
 
 const routes = Router();
 
@@ -17,12 +16,6 @@ routes.use('/profiles', profileRoutes);
 
 routes.use('/whatsapp', whatsappRoute);
 
-routes.use(
-  '/clients',
-  ensureAuthenticated(['administrator']),
-  (request: Request, response: Response) => {
-    return response.json({ message: 'ok' });
-  },
-);
+routes.use('/conversations', conversationRoutes);
 
 export default routes;

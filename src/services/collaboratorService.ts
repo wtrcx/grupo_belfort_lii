@@ -1,5 +1,5 @@
 import { getCustomRepository } from 'typeorm';
-import CollaboratorDTO from '@dtos/collaboratorsDto';
+import CollaboratorDTO from '@dtos/collaboratorsDTO';
 import Collaborator from '@models/Collaborators';
 import CollaboratorsRepository from '@repositories/collaboratorRepository';
 

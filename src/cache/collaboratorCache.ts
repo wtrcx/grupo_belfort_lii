@@ -1,4 +1,4 @@
-import CollaboratorDTO from '@dtos/collaboratorsDto';
+import CollaboratorDTO from '@dtos/collaboratorsDTO';
 import NodeCache from 'node-cache';
 
 class CollaboratorCache {

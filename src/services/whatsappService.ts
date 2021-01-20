@@ -3,6 +3,7 @@ import { getCustomRepository } from 'typeorm';
 
 import fs from 'fs';
 import path from 'path';
+import mime from 'mime-types';
 
 import ClientRepository from '@repositories/clientRepository';
 import UserRepository from '@repositories/userRepository';
@@ -10,6 +11,9 @@ import UserRepository from '@repositories/userRepository';
 import BadRequest from '@errors/badRequest';
 import ServerError from '@errors/serverError';
 
+import FileDTO from '@dtos/fileDTO';
+
+import { ReturnScript } from 'src/scripts/interfaces';
 import ScriptManager from '../scripts';
 
 interface WAClient {
@@ -114,6 +118,10 @@ class WhatsappService {
       const token = await whatsapp.getSessionTokenBrowser();
       whatsappClient.access = token.WABrowserId;
       await clientRepository.save(whatsappClient);
+      fs.promises
+        .unlink(imageDirection)
+        .then(OK => console.log(OK))
+        .catch(error => console.log(error));
       this.chat(whatsapp);
     } catch (error) {
       throw new ServerError(`Venom API: ${error}`);
@@ -121,8 +129,13 @@ class WhatsappService {
   }
 
   public async chat(client: Whatsapp): Promise<void> {
+    let file: FileDTO;
+    let scriptManager: ScriptManager;
+    let returnScript: ReturnScript;
+
     await client.onMessage(async message => {
       if (!message.isGroupMsg) {
+        await client.setChatState(message.from, 0);
         const clientRepository: ClientRepository = getCustomRepository(
           ClientRepository,
         );
@@ -134,6 +147,7 @@ class WhatsappService {
         });
 
         if (!whatsapp) {
+          await client.setChatState(message.from, 2);
           await client.sendText(
             message.from,
             '*👨‍🔧 Estamos passando por uma manutenção.* Tente novamente mais tarde!',
@@ -141,26 +155,77 @@ class WhatsappService {
           return;
         }
 
-        const scriptManager = new ScriptManager(
-          whatsapp,
-          message.from,
-          message.body,
-          whatsapp.script,
-          whatsapp.service,
-        );
+        if (message.isMedia === true || message.isMMS === true) {
+          const extension = mime
+            .extension(message.mimetype)
+            .toString()
+            .toLowerCase();
 
-        const returnScript = await scriptManager.chat();
-
-        if (Array.isArray(returnScript.message)) {
-          returnScript.message.forEach(messages =>
-            client.sendText(message.from, messages),
+          const imageDirection = path.resolve(
+            __dirname,
+            '..',
+            'tmp',
+            'whatsapp',
+            `${new Date().getTime()}-${message.chatId}.${extension}`,
           );
-        } else {
-          await client.sendText(message.from, returnScript.message);
-        }
 
-        if (returnScript.end) {
-          await client.clearChat(message.chatId);
+          const buffer = await client.decryptFile(message);
+          fs.promises
+            .writeFile(imageDirection, buffer)
+            .then(async () => {
+              file = {
+                filePath: imageDirection,
+                extenstion: extension,
+              };
+
+              scriptManager = new ScriptManager(
+                whatsapp,
+                message.from,
+                message.body,
+                whatsapp.script,
+                whatsapp.service,
+                file,
+              );
+
+              returnScript = await scriptManager.chat();
+
+              await client.setChatState(message.from, 2);
+              if (Array.isArray(returnScript.message)) {
+                returnScript.message.forEach(messages =>
+                  client.sendText(message.from, messages),
+                );
+              } else {
+                await client.sendText(message.from, returnScript.message);
+              }
+
+              if (returnScript.end) {
+                await client.clearChat(message.chatId);
+              }
+            })
+            .catch(error => console.log(error));
+        } else {
+          scriptManager = new ScriptManager(
+            whatsapp,
+            message.from,
+            message.body,
+            whatsapp.script,
+            whatsapp.service,
+          );
+
+          returnScript = await scriptManager.chat();
+
+          await client.setChatState(message.from, 2);
+          if (Array.isArray(returnScript.message)) {
+            returnScript.message.forEach(messages =>
+              client.sendText(message.from, messages),
+            );
+          } else {
+            await client.sendText(message.from, returnScript.message);
+          }
+
+          if (returnScript.end) {
+            await client.clearChat(message.chatId);
+          }
         }
       }
     });

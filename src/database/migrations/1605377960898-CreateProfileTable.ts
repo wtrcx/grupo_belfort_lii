@@ -51,7 +51,11 @@ export default class CreateProfileTable1605377960898
     );
     await queryRunner.query(
       'INSERT INTO profiles (name, alias, description) ' +
-        "VALUES('whatsapp','WhatsApp', 'Grupo com as funções para gerenciar os acessos.')",
+        "VALUES('whatsapp','WhatsApp', 'Grupo com as funções para gerenciar os clientes WhatsApp.')",
+    );
+    await queryRunner.query(
+      'INSERT INTO profiles (name, alias, description) ' +
+        "VALUES('conversation','Conversas', 'Grupo com as funções para gerenciar as conversas.')",
     );
   }
 

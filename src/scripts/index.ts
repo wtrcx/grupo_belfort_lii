@@ -1,3 +1,4 @@
+import FileDTO from '@dtos/fileDTO';
 import Client from '@models/Client';
 import ConversationsService from '@services/conversationService';
 import GrupoBelfortGeral from './grupoBelfortGeral';
@@ -16,18 +17,22 @@ class ScriptManager {
 
   private readonly service: string;
 
+  private readonly file: FileDTO | undefined;
+
   constructor(
     client: Client,
     from: string,
     message: string,
     script: string,
     service: string,
+    file?: FileDTO,
   ) {
     this.client = client;
     this.from = from;
     this.message = message;
     this.script = script;
     this.service = service;
+    this.file = file;
   }
 
   public async chat(): Promise<ReturnScript> {
@@ -52,6 +57,7 @@ class ScriptManager {
           access,
           this.message,
           this.service,
+          this.file,
         );
 
         const conversation = await this.conversationsService.chatOn(

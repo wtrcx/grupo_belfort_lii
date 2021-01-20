@@ -1,5 +1,6 @@
-import CollaboratorDTO from '@dtos/collaboratorsDto';
+import CollaboratorDTO from '@dtos/collaboratorsDTO';
 import CompanyDTO from '@dtos/companyDTO';
+import BadRequest from '@errors/badRequest';
 import axios from 'axios';
 
 class SarService {
@@ -17,6 +18,21 @@ class SarService {
     }
 
     return null;
+  }
+
+  public async findCompany(id: number): Promise<CompanyDTO> {
+    const result = await axios.get(
+      `http://192.168.0.166:8080/api-belfort/companies/${id}`,
+    );
+
+    const statusCode = result.status;
+
+    if (statusCode === 200) {
+      const company = result.data as CompanyDTO;
+      return company;
+    }
+
+    throw new BadRequest('Company not found');
   }
 
   public async findCollaboratorByReAndCompany(

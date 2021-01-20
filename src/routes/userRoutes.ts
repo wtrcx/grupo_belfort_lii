@@ -2,7 +2,7 @@ import { Router } from 'express';
 
 import UserService from '@services/userService';
 
-import UserDTO from '@dtos/userDto';
+import UserDTO from '@dtos/userDTO';
 
 const userService = new UserService();
 

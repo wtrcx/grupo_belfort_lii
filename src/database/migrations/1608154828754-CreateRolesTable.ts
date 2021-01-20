@@ -90,6 +90,12 @@ export default class CreateRolesTable1608154828754
         "VALUES('whatsapp_create','Novo Whatsapp', 'Criar novas conexões com o Whatsapp.'," +
         "(SELECT id FROM profiles WHERE name='whatsapp'))",
     );
+
+    await queryRunner.query(
+      'INSERT INTO roles (name, alias, description, profile_id) ' +
+        "VALUES('conversation_consult','Consultar Conversas', 'Criar novas conexões com o Whatsapp.'," +
+        "(SELECT id FROM profiles WHERE name='conversation'))",
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

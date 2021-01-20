@@ -1,2 +1,2 @@
 .env.* filter=git-crypt diff=git-crypt
-auth.ts filter=git-crypt diff=git-crypt
+.google.* filter=git-crypt diff=git-crypt

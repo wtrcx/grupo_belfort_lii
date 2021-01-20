@@ -1,4 +1,4 @@
-import ViaCepDTO from '@dtos/viaCepDto';
+import ViaCepDTO from '@dtos/viaCepDTO';
 import NodeCache from 'node-cache';
 
 class ViaCepCache {
