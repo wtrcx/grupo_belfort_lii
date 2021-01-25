@@ -6,8 +6,11 @@ import {
   UpdateDateColumn,
   JoinColumn,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
+import Utterance from './Utterance';
 import User from './User';
+import Answer from './Answer';
 
 @Entity('intents')
 class Intent {
@@ -22,6 +25,12 @@ class Intent {
 
   @Column()
   is_enable: boolean;
+
+  @OneToMany(() => Utterance, utterance => utterance.intent)
+  utterances: Utterance[];
+
+  @OneToMany(() => Answer, answer => answer.intent)
+  answers: Answer[];
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })

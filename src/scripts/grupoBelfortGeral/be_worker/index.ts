@@ -4,6 +4,7 @@ import HistoricService from '@services/historicService';
 import { ReturnScript } from 'src/scripts/interfaces';
 
 import fs from 'fs';
+import path from 'path';
 
 import ViaCepCache from '@cache/viaCepCache';
 
@@ -277,9 +278,32 @@ class BeWorker {
       );
 
       await emailService.send(
-        'wesley@trcx.com.br',
+        'lamorim@belfort.com.br',
         '[CHATBOT] - Trabalhe Conosco',
-        JSON.stringify(conversationDTO),
+        {
+          type: 'html',
+          data: {
+            name: beWorkerDTO.name,
+            email: beWorkerDTO.email,
+            phone: beWorkerDTO.phone,
+            vacancy: beWorkerDTO.vacancy,
+            public_place: beWorkerDTO.public_place,
+            neighborhood: beWorkerDTO.neighborhood,
+            locality: beWorkerDTO.locality,
+            state: beWorkerDTO.state,
+            zip_code: beWorkerDTO.zip_code,
+            id: conversationDTO.id,
+            date: conversationDTO.date.toLocaleDateString('pt-br', {
+              day: 'numeric',
+              month: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+              second: 'numeric',
+            }),
+          },
+          filePath: path.resolve(__dirname, '..', 'templates', 'beWorker.ejs'),
+        },
         filePath,
       );
       return true;

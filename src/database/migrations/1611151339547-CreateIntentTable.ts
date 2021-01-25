@@ -31,7 +31,6 @@ export default class CreateIntentTable1611151339547
           {
             name: 'script',
             type: 'varchar',
-            isUnique: true,
           },
           {
             name: 'is_enable',

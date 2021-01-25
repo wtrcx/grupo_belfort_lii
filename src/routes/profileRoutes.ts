@@ -7,7 +7,7 @@ const profileRoutes = Router();
 
 profileRoutes.get(
   '/',
-  ensureAuthenticated(['administrator', 'profile_consult']),
+  ensureAuthenticated(['administrator']),
   async (request, response) => {
     const profileService = new ProfileService();
 

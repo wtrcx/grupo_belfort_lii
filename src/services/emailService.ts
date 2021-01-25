@@ -1,7 +1,9 @@
 import nodemailer from 'nodemailer';
+import ejs from 'ejs';
 import Mail from 'nodemailer/lib/mailer';
 import fs from 'fs';
 import FileDTO from '@dtos/fileDTO';
+import BodyDTO from '@dtos/bodyDTO';
 
 class EmailService {
   private readonly replyTo: string;
@@ -19,7 +21,7 @@ class EmailService {
   public async send(
     to: string,
     subject: string,
-    text: string,
+    body: BodyDTO,
     attachment?: FileDTO,
   ): Promise<void> {
     if (this.password) {
@@ -40,7 +42,6 @@ class EmailService {
           to,
           replyTo: this.replyTo,
           subject,
-          text,
           attachments: [
             {
               filename: `curriculo.${attachment.extenstion}`,
@@ -48,9 +49,18 @@ class EmailService {
             },
           ],
         };
-        await transporter
-          .sendMail(mailOptions)
-          .catch(error => console.log(`NodeMailer: ${error}`));
+
+        if (body.type === 'html' && body.filePath) {
+          mailOptions.html = await ejs
+            .renderFile(body.filePath, body.data)
+            .then(data => data);
+        } else {
+          mailOptions.text = body.text;
+        }
+
+        await transporter.sendMail(mailOptions).catch(error => {
+          throw new Error(error);
+        });
 
         await fs.promises
           .unlink(attachment.filePath)
@@ -61,12 +71,19 @@ class EmailService {
           to,
           replyTo: this.replyTo,
           subject,
-          text,
         };
-        transporter
-          .sendMail(mailOptions)
-          .then(ok => console.log(ok))
-          .catch(error => console.log(error));
+
+        if (body.type === 'html' && body.filePath) {
+          mailOptions.html = await ejs
+            .renderFile(body.filePath, body.data)
+            .then(data => data);
+        } else {
+          mailOptions.text = body.text;
+        }
+
+        transporter.sendMail(mailOptions).catch(error => {
+          throw new Error(error);
+        });
       }
     }
   }

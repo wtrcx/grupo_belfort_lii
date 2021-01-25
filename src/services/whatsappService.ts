@@ -8,12 +8,15 @@ import mime from 'mime-types';
 import ClientRepository from '@repositories/clientRepository';
 import UserRepository from '@repositories/userRepository';
 
+import ScriptList from '@services/scriptService';
+
 import BadRequest from '@errors/badRequest';
 import ServerError from '@errors/serverError';
 
 import FileDTO from '@dtos/fileDTO';
 
 import { ReturnScript } from 'src/scripts/interfaces';
+import NotFound from '@errors/notFound';
 import ScriptManager from '../scripts';
 
 interface WAClient {
@@ -36,6 +39,10 @@ class WhatsappService {
 
     if (!script) {
       throw new BadRequest('The following data is mandatory: script');
+    }
+
+    if (!ScriptList.isValid(script)) {
+      throw new NotFound('Script not found');
     }
 
     if (!host) {
@@ -118,10 +125,9 @@ class WhatsappService {
       const token = await whatsapp.getSessionTokenBrowser();
       whatsappClient.access = token.WABrowserId;
       await clientRepository.save(whatsappClient);
-      fs.promises
-        .unlink(imageDirection)
-        .then(() => console.log('QR Code has been deleted!'))
-        .catch(() => console.log('QR Code has been deleted!'));
+      fs.promises.unlink(imageDirection).catch(error => {
+        throw new Error(error);
+      });
       this.chat(whatsapp);
     } catch (error) {
       throw new ServerError(`Venom API: ${error}`);
@@ -193,6 +199,22 @@ class WhatsappService {
 
               returnScript = await scriptManager.chat();
 
+              if (returnScript.start) {
+                const image = Math.floor(Math.random() * 3) + 1;
+
+                await client.sendImageAsSticker(
+                  message.from,
+                  path.resolve(
+                    __dirname,
+                    '..',
+                    'public',
+                    'assets',
+                    'sticker',
+                    `sticker0${image}.webp`,
+                  ),
+                );
+              }
+
               await client.setChatState(message.from, 2);
               if (Array.isArray(returnScript.message)) {
                 returnScript.message.forEach(messages =>
@@ -206,7 +228,9 @@ class WhatsappService {
                 await client.clearChat(message.chatId);
               }
             })
-            .catch(error => console.log(error));
+            .catch(error => {
+              throw new Error(error);
+            });
         } else {
           scriptManager = new ScriptManager(
             whatsapp,
@@ -217,6 +241,19 @@ class WhatsappService {
           );
 
           returnScript = await scriptManager.chat();
+
+          if (returnScript.start) {
+            const image = path.resolve(
+              __dirname,
+              '..',
+              'public',
+              'assets',
+              'sticker',
+              `sticker0${Math.floor(Math.random() * 3) + 1}.webp`,
+            );
+
+            await client.sendImageAsSticker(message.from, image);
+          }
 
           await client.setChatState(message.from, 2);
           if (Array.isArray(returnScript.message)) {

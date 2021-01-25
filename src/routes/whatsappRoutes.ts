@@ -9,7 +9,7 @@ const whatsappService = new WhatsappService();
 
 whatsappRoute.post(
   '/',
-  ensureAuthenticated(['administrator', 'whatsapp_create']),
+  ensureAuthenticated(['administrator']),
   async (request, response) => {
     const { script } = request.body;
     const { host } = request.headers;
@@ -22,7 +22,7 @@ whatsappRoute.post(
 
 whatsappRoute.post(
   '/:id',
-  ensureAuthenticated(['administrator', 'whatsapp_create']),
+  ensureAuthenticated(['administrator']),
   async (request, response) => {
     const { id } = request.params;
     await whatsappService.client(id);
@@ -37,7 +37,7 @@ whatsappRoute.post(
 
 whatsappRoute.get(
   '/restart',
-  ensureAuthenticated(['administrator', 'whatsapp_create']),
+  ensureAuthenticated(['administrator']),
   async (request, response) => {
     whatsappService.restart();
 

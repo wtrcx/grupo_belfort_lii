@@ -7,7 +7,7 @@ const conversationRoutes = Router();
 
 conversationRoutes.get(
   '/',
-  ensureAuthenticated(['administrator', 'conversation_consult']),
+  ensureAuthenticated(['administrator']),
   async (request, response) => {
     const conversationsService = new ConversationsService();
 

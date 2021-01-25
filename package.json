@@ -10,6 +10,7 @@
     "prod:server": "pm2 start ./dist/server.js --name 'belfort_bot'"
   },
   "dependencies": {
+    "@nlpjs/basic": "^4.19.5",
     "axios": "^0.21.0",
     "bcryptjs": "^2.4.3",
     "dotenv": "^8.2.0",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",
+    "@types/ejs": "^3.0.5",
     "@types/express": "^4.17.9",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/mime-types": "^2.1.0",

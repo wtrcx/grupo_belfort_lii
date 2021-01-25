@@ -30,6 +30,7 @@ export default class CreateAnswersTable1611151359946
           {
             name: 'answer',
             type: 'varchar',
+            isUnique: true,
           },
           {
             name: 'created_at',

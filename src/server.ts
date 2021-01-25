@@ -3,6 +3,7 @@ import 'reflect-metadata';
 
 import './database';
 import './cache';
+import ScriptList from '@services/scriptService';
 
 import express from 'express';
 import 'express-async-errors';
@@ -32,5 +33,6 @@ app.use(routes);
 app.use(exceptionHandler);
 
 app.listen(process.env.APP_PORT, () => {
+  ScriptList.init();
   console.log(`Online server on port ${process.env.APP_PORT}`);
 });

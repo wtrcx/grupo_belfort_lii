@@ -30,6 +30,7 @@ export default class CreateUtterancesTable1611151351404
           {
             name: 'utterance',
             type: 'varchar',
+            isUnique: true,
           },
           {
             name: 'created_at',

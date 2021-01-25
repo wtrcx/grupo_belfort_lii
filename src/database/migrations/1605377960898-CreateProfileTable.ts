@@ -45,18 +45,6 @@ export default class CreateProfileTable1605377960898
       'INSERT INTO profiles (name, alias, description) ' +
         "VALUES('administrator','Administrador', 'Perfil com todos os acessos.')",
     );
-    await queryRunner.query(
-      'INSERT INTO profiles (name, alias, description) ' +
-        "VALUES('access','Acesso', 'Grupo com as funções para gerenciar os acessos.')",
-    );
-    await queryRunner.query(
-      'INSERT INTO profiles (name, alias, description) ' +
-        "VALUES('whatsapp','WhatsApp', 'Grupo com as funções para gerenciar os clientes WhatsApp.')",
-    );
-    await queryRunner.query(
-      'INSERT INTO profiles (name, alias, description) ' +
-        "VALUES('conversation','Conversas', 'Grupo com as funções para gerenciar as conversas.')",
-    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

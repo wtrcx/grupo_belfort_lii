@@ -66,36 +66,6 @@ export default class CreateRolesTable1608154828754
         "VALUES('administrator','Administrador', 'Papel com todos os acessos.'," +
         "(SELECT id FROM profiles WHERE name='administrator'))",
     );
-
-    await queryRunner.query(
-      'INSERT INTO roles (name, alias, description, profile_id) ' +
-        "VALUES('profile_consult','Consultar Perfil', 'Consultar todos os perfis.'," +
-        "(SELECT id FROM profiles WHERE name='access'))",
-    );
-
-    await queryRunner.query(
-      'INSERT INTO roles (name, alias, description, profile_id) ' +
-        "VALUES('access_consult','Consultar Acessos', 'Consultar todos os usuários cadastrados.'," +
-        "(SELECT id FROM profiles WHERE name='access'))",
-    );
-
-    await queryRunner.query(
-      'INSERT INTO roles (name, alias, description, profile_id) ' +
-        "VALUES('access_create','Criar Usuários', 'Criar novos usuários na aplicação.'," +
-        "(SELECT id FROM profiles WHERE name='access'))",
-    );
-
-    await queryRunner.query(
-      'INSERT INTO roles (name, alias, description, profile_id) ' +
-        "VALUES('whatsapp_create','Novo Whatsapp', 'Criar novas conexões com o Whatsapp.'," +
-        "(SELECT id FROM profiles WHERE name='whatsapp'))",
-    );
-
-    await queryRunner.query(
-      'INSERT INTO roles (name, alias, description, profile_id) ' +
-        "VALUES('conversation_consult','Consultar Conversas', 'Criar novas conexões com o Whatsapp.'," +
-        "(SELECT id FROM profiles WHERE name='conversation'))",
-    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
