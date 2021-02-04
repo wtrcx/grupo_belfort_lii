@@ -3,7 +3,6 @@ import ConversationsService from '@services/conversationService';
 import HistoricService from '@services/historicService';
 import { ReturnScript } from 'src/scripts/interfaces';
 
-import fs from 'fs';
 import path from 'path';
 
 import ViaCepCache from '@cache/viaCepCache';
@@ -177,12 +176,7 @@ class BeWorker {
           historic.response = this.message.toUpperCase();
           await this.historicService.update(historic);
 
-          await this.historicService.execute(
-            conversation,
-            5,
-            'file',
-            'not_opting',
-          );
+          await this.historicService.execute(conversation, 5, 'file', '');
 
           return {
             message: vacancyScript.message,
@@ -192,55 +186,13 @@ class BeWorker {
         return { message: vacancyScript.message, end: vacancyScript.end };
 
       case 5:
-        if (historic.response === 'not_opting') {
-          switch (this.message) {
-            case '1':
-              historic.response = 'optant';
-              await this.historicService.update(historic);
-              return {
-                message: [
-                  'OK, os seguintes arquivos serão aceitos:\n\n' +
-                    '*Documento:* pdf, doc, docx e odt\n\n' +
-                    'Ou se preferir, basta nos enviar uma foto através da sua câmera.' +
-                    ' Não se esqueça de enquadrar adequadamente o seu currículo',
-                ],
-              };
-            case '2':
-              await this.sendEmail(conversation);
+        const fileScript = await file(this.file);
 
-              return {
-                message: [
-                  '🤝 Ótimo, temos todas as informações necessárias para o seu cadastro.',
-                  'Posso lhe ajudar com algo mais?\n\n*1.* Sim\n*2.* Não',
-                ],
-                finish: true,
-              };
-            default:
-              if (this.file) {
-                await fs.promises.unlink(this.file.filePath);
-              }
+        if (fileScript.status) {
+          historic.response = 'confirmed';
+          await this.historicService.update(historic);
 
-              return {
-                message: [
-                  '😕 Hum, infelizmente não encontramos a opção informada, por favor tente novamente',
-                  'Escolha uma das opções abaixo:\n\n*1.* Sim, desejo enviar o meu *currículo*.\n' +
-                    '*2.* Não, seguirei sem enviar o meu *currículo*.',
-                ],
-              };
-          }
-        }
-
-        if (this.file) {
-          const fileScript = await file(this.file);
-
-          if (fileScript.status) {
-            historic.response = 'confirmed';
-            await this.historicService.update(historic);
-
-            await this.sendEmail(conversation, this.file);
-
-            return fileScript;
-          }
+          await this.sendEmail(conversation, this.file);
 
           return fileScript;
         }

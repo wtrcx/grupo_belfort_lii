@@ -13,6 +13,7 @@ import AnswerRepository from '@repositories/answerRepository';
 import UtteranceRepository from '@repositories/utteranceRepository';
 import ServerError from '@errors/serverError';
 import UserRepository from '@repositories/userRepository';
+import Intent from '@models/Intent';
 
 interface NLP {
   name: string;
@@ -45,7 +46,7 @@ class IntentService {
     utterances,
     answers,
     user,
-  }: CreateIntent): Promise<boolean> {
+  }: CreateIntent): Promise<IntentDTO> {
     const userRepository = getCustomRepository(UserRepository);
     const intentRepository = getCustomRepository(IntentRepository);
     const utteranceRepository = getCustomRepository(UtteranceRepository);
@@ -125,7 +126,20 @@ class IntentService {
       await answerRepository.save(newAnswer);
     });
 
-    return false;
+    const intents = await intentRepository.find({
+      relations: ['utterances', 'answers'],
+      where: { script },
+    });
+
+    const intentDTO: IntentDTO = this.toDTO(script, intents);
+
+    const file = path.resolve(this.fileDirectory, `${intentDTO.name}.json`);
+
+    await fs.promises.writeFile(file, JSON.stringify(intent)).then(async () => {
+      await this.train(intentDTO.name);
+    });
+
+    return intentDTO;
   }
 
   public async init(): Promise<IntentDTO[]> {
@@ -135,21 +149,9 @@ class IntentService {
       relations: ['utterances', 'answers'],
     });
 
-    const intentDTO: IntentDTO[] = this.scriptList.map(script => {
-      return {
-        name: script,
-        locale: 'pt',
-        data: intents
-          .filter(intent => intent.script === script)
-          .map(intent => {
-            return {
-              intent: intent.name,
-              utterances: intent.utterances.map(i => i.utterance),
-              answers: intent.answers.map(i => i.answer),
-            };
-          }),
-      };
-    });
+    const intentDTO: IntentDTO[] = this.scriptList.map(script =>
+      this.toDTO(script, intents),
+    );
 
     intentDTO.forEach(async intent => {
       const file = path.resolve(this.fileDirectory, `${intent.name}.json`);
@@ -188,14 +190,36 @@ class IntentService {
       throw new BadRequest('Script not found');
     }
 
-    const { manager } = this.nlp.filter(x => x.name === script)[0];
+    const managerIndex = this.nlp.findIndex(x => x.name === script);
+
+    const { manager } = this.nlp[managerIndex];
 
     if (manager) {
-      const response = await manager.process('pt', phrase);
-      return response.answer;
+      try {
+        const response = await manager.process('pt', phrase);
+        return response;
+      } catch {
+        return null;
+      }
     }
 
     return null;
+  }
+
+  public toDTO(script: string, intents: Intent[]): IntentDTO {
+    return {
+      name: script,
+      locale: 'pt',
+      data: intents
+        .filter(x => x.script === script)
+        .map(x => {
+          return {
+            intent: x.name,
+            utterances: x.utterances.map(i => i.utterance),
+            answers: x.answers.map(i => i.answer),
+          };
+        }),
+    };
   }
 }
 

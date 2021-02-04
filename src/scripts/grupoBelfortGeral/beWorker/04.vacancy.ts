@@ -6,7 +6,13 @@ const vacancy = async (message: string): Promise<ReturnScript> => {
   if (regex.test(message) && message.length > 3) {
     return {
       status: true,
-      message: 'Deseja anexar o seu currículo?\n\n*1.* Sim\n*2.* Não',
+      message:
+        '📄 Agora preciso que nós envie o se currículo.\n' +
+        'Os seguintes arquivos serão aceitos:\n\n' +
+        '*Documento:* pdf, doc, docx e odt\n\n' +
+        'Ou se preferir, caso seu curriculo possua apenas uma página,' +
+        ' basta nos enviar *uma* foto através da sua câmera.' +
+        ' Não se esqueça de enquadrar adequadamente o seu currículo',
     };
   }
 

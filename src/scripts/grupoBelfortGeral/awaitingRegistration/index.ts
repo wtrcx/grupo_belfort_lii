@@ -301,9 +301,9 @@ class AwaitingRegistration {
                 'Este é o menu exclusivo para os colaboradores do *GRUPO BELFORT*!',
                 'Escolha uma das opções abaixo:\n\n' +
                   '*1.* Indicação de cliente\n' +
-                  '*2.* Indicação de colaborador\n' +
-                  '*3.* Demais informações\n' +
-                  '*4.* Encerrar atendimento',
+                  '*2.* Demais informações\n' +
+                  '*3.* Encerrar atendimento\n\n' +
+                  'Estou a sua disposição, se preferir, digite *Ei Lili* e eu irei lhe atender.',
               ],
             };
 

@@ -92,45 +92,42 @@ class WhatsappService {
       throw new ServerError('Internal server error');
     }
 
-    const whatsapp = await create(
-      clientId,
-      base64Qr => {
-        const matches = base64Qr.match(/^data:([A-Za-z-+\\/]+);base64,(.+)$/);
-
-        if (!matches || matches.length !== 3) {
-          throw new ServerError('Venom API: Invalid input string');
-        }
-
-        const type = matches[1];
-        const data = Buffer.from(matches[2], 'base64');
-
-        const imageBuffer = { type, data };
-
-        fs.writeFile(imageDirection, imageBuffer.data, 'binary', err => {
-          if (err != null) {
-            throw new ServerError(`Venom API: ${err.message}`);
-          }
-        });
-      },
-      undefined,
-      {
-        logQR: false,
-        disableWelcome: true,
-        updatesLog: false,
-        mkdirFolderToken: '/node_modules/venom-bot',
-      },
-    );
-
     try {
+      const whatsapp = await create(
+        clientId,
+        base64Qr => {
+          const matches = base64Qr.match(/^data:([A-Za-z-+\\/]+);base64,(.+)$/);
+
+          if (!matches || matches.length !== 3) {
+            throw new ServerError('Venom API: Invalid input string');
+          }
+
+          const type = matches[1];
+          const data = Buffer.from(matches[2], 'base64');
+
+          const imageBuffer = { type, data };
+
+          fs.writeFile(imageDirection, imageBuffer.data, 'binary', err => {
+            if (err != null) {
+              throw new ServerError(`Venom API: ${err.message}`);
+            }
+          });
+        },
+        undefined,
+        {
+          logQR: false,
+          disableWelcome: true,
+          updatesLog: false,
+          mkdirFolderToken: '/node_modules/venom-bot',
+        },
+      );
+
       const token = await whatsapp.getSessionTokenBrowser();
       whatsappClient.access = token.WABrowserId;
       await clientRepository.save(whatsappClient);
-      fs.promises.unlink(imageDirection).catch(error => {
-        throw new Error(error);
-      });
       this.chat(whatsapp);
     } catch (error) {
-      throw new ServerError(`Venom API: ${error}`);
+      throw new Error(`Venom API: ${error}`);
     }
   }
 

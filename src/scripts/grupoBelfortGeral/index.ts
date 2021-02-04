@@ -10,7 +10,8 @@ import FileDTO from '@dtos/fileDTO';
 import { ReturnScript } from '../interfaces';
 import AwaitingRegistration from './awaitingRegistration';
 import CustomerIndication from './customerIndication';
-import BeWorker from './be_worker';
+import BeWorker from './beWorker';
+import VirtualAssistant from './virtualAssistant';
 
 class GrupoBelfortGeral {
   private readonly collaboratorService: CollaboratorsService = new CollaboratorsService();
@@ -105,8 +106,9 @@ class GrupoBelfortGeral {
               `Meu nome é *Lili* e darei continuidade ao seu atendimento.\n\n` +
               'Escolha uma das opções abaixo:\n\n' +
               '*1.* Indicação de cliente\n' +
-              '*2.* Demais informações\n' +
-              '*3.* Encerrar atendimento',
+              '*2.* Falar com um atendente\n' +
+              '*3.* Demais informações\n' +
+              '*4.* Encerrar atendimento',
           };
         }
 
@@ -135,7 +137,7 @@ class GrupoBelfortGeral {
 
   public async menu(conversation: Conversation): Promise<ReturnScript> {
     if (conversation.collaborator) {
-      switch (this.message) {
+      switch (this.message.toLowerCase()) {
         case '1':
           conversation.name = 'customer_indication';
           await this.conversationsService.update(conversation);
@@ -150,6 +152,18 @@ class GrupoBelfortGeral {
             ],
           };
         case '2':
+          conversation.name = 'virtual_assistant';
+          await this.conversationsService.update(conversation);
+
+          const [name] = conversation.collaborator.name.split(' ');
+
+          return {
+            message: [
+              `Oi *${name}*, para melhor atende-lo, resuma em apenas uma mensagem a sua dúvida.`,
+              'Em que posso ajuda-lo?',
+            ],
+          };
+        case '3':
           conversation.name = 'other_information';
           conversation.close = true;
           await this.conversationsService.update(conversation);
@@ -175,7 +189,7 @@ class GrupoBelfortGeral {
             ],
             end: true,
           };
-        case '3':
+        case '4':
           conversation.name = 'unsupported';
           conversation.close = true;
           await this.conversationsService.update(conversation);
@@ -194,8 +208,9 @@ class GrupoBelfortGeral {
               'por favor tente novamente\n\n' +
               'Escolha uma das opções abaixo:\n\n' +
               '*1.* Indicação de cliente\n' +
-              '*2.* Demais informações\n' +
-              '*3.* Encerrar atendimento',
+              '*2.* Falar com um atendente\n' +
+              '*3.* Demais informações\n' +
+              '*4.* Encerrar atendimento',
           };
       }
     } else {
@@ -314,9 +329,11 @@ class GrupoBelfortGeral {
             this.service,
           );
 
-          const returnScript = await customerIndication.chat(conversation);
+          const customerIndicationReturn = await customerIndication.chat(
+            conversation,
+          );
 
-          if (returnScript.finish) {
+          if (customerIndicationReturn.finish) {
             conversation.close = true;
             await this.conversationsService.update(conversation);
 
@@ -331,7 +348,7 @@ class GrupoBelfortGeral {
             await this.conversationsService.update(newConversation);
           }
 
-          return returnScript;
+          return customerIndicationReturn;
 
         case 'complete_conversation':
           await this.conversationsService.delete(conversation);
@@ -354,7 +371,8 @@ class GrupoBelfortGeral {
                   `✅ Otimo *${name}*, escolha uma das opções abaixo:\n\n` +
                   '*1.* Indicação de cliente\n' +
                   '*2.* Demais informações\n' +
-                  '*3.* Encerrar atendimento',
+                  '*3.* Encerrar atendimento\n\n' +
+                  'Estou a sua disposição, se preferir, digite *Ei Lili* e eu irei lhe atender.',
               };
 
             case '2':
@@ -377,6 +395,21 @@ class GrupoBelfortGeral {
                 ],
               };
           }
+        case 'virtual_assistant':
+          const virtualAssistant = new VirtualAssistant(
+            'grupo_belfort_geral',
+            this.client,
+            this.from,
+            this.message,
+            this.service,
+          );
+
+          const virtualAssistantReturn = await virtualAssistant.chat(
+            conversation,
+          );
+
+          return virtualAssistantReturn;
+
         default:
           conversation.name = 'server_error';
           conversation.close = true;

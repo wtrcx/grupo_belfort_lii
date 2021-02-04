@@ -2,7 +2,15 @@ import FileDTO from '@dtos/fileDTO';
 import fs from 'fs';
 import { ReturnScript } from '../../interfaces';
 
-const file = async (fileDTO: FileDTO): Promise<ReturnScript> => {
+const file = async (fileDTO?: FileDTO): Promise<ReturnScript> => {
+  if (!fileDTO)
+    return {
+      message: [
+        `❌ Para continuar, preciso que nos envie o seu curriculo`,
+        'Tente novamente',
+      ],
+    };
+
   const extensions = ['jpeg', 'jpg', 'png', 'bmp', 'pdf', 'doc', 'docx', 'odt'];
 
   const accept = extensions.some(ext => ext === fileDTO.extenstion);
